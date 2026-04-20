@@ -1,17 +1,19 @@
-"""Search page — FTS5 dual-channel search with quick templates."""
+"""Search page — FTS5 dual-channel search with Fluent search box + template chips."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QGridLayout, QGroupBox,
+from PyQt6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel, CardWidget, CaptionLabel, ComboBox, FluentIcon, PrimaryPushButton,
+    PushButton, SearchLineEdit, StrongBodyLabel, SubtitleLabel, TableWidget,
+    TransparentPushButton,
 )
 
 from scikms.i18n import t
-from scikms.kms.config import EBM_LEVELS, SEARCH_TEMPLATES
+from scikms.kms.config import SEARCH_TEMPLATES
 from scikms.kms.db import get_paper_by_id, search_papers
 
 if TYPE_CHECKING:
@@ -25,45 +27,71 @@ class SearchPage(QWidget):
         self._results: list[dict] = []
         self._build()
 
-    # ------------------------------------------------------------------
     def _build(self) -> None:
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"<h2>{t('kms-search-title')}</h2>"))
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
+
+        layout.addWidget(SubtitleLabel(t("kms-search-title")))
 
         bar = QHBoxLayout()
-        self._ed_query = QLineEdit()
+        self._ed_query = SearchLineEdit(self)
         self._ed_query.setPlaceholderText(t("kms-search-prompt"))
+        self._ed_query.searchSignal.connect(lambda _q: self._on_search())
         self._ed_query.returnPressed.connect(self._on_search)
         bar.addWidget(self._ed_query, 1)
-        btn = QPushButton(t("kms-search-button"))
+
+        bar.addWidget(CaptionLabel(t("kms-search-scope") + ":"))
+        self._cmb_scope = ComboBox(self)
+        for label_key, data in [
+            ("sidebar-filter-scope-all", "all"),
+            ("sidebar-filter-scope-title-abstract", "title_abstract"),
+            ("sidebar-filter-scope-notes", "notes"),
+            ("sidebar-filter-scope-content", "fulltext"),
+        ]:
+            self._cmb_scope.addItem(t(label_key), userData=data)
+        bar.addWidget(self._cmb_scope)
+
+        btn = PrimaryPushButton(FluentIcon.SEARCH, t("kms-search-button"))
         btn.clicked.connect(self._on_search)
         bar.addWidget(btn)
         layout.addLayout(bar)
 
-        templates_box = QGroupBox(t("kms-search-templates"))
-        grid = QGridLayout(templates_box)
-        for i, (label, q) in enumerate(SEARCH_TEMPLATES):
-            b = QPushButton(label)
+        tpl_card = CardWidget(self)
+        tpl_card.setBorderRadius(8)
+        tpl_lay = QVBoxLayout(tpl_card)
+        tpl_lay.setContentsMargins(12, 10, 12, 10)
+        tpl_lay.setSpacing(6)
+        tpl_lay.addWidget(StrongBodyLabel(t("kms-search-templates")))
+        chips = QHBoxLayout()
+        chips.setSpacing(6)
+        for label, q in SEARCH_TEMPLATES:
+            b = TransparentPushButton(FluentIcon.TAG, label)
             b.clicked.connect(lambda _checked=False, query=q: self._run_query(query))
-            grid.addWidget(b, i // 4, i % 4)
-        layout.addWidget(templates_box)
+            chips.addWidget(b)
+        chips.addStretch(1)
+        tpl_lay.addLayout(chips)
+        layout.addWidget(tpl_card)
 
-        self._lbl_count = QLabel("")
+        self._lbl_count = CaptionLabel("")
         layout.addWidget(self._lbl_count)
-
-        self._lbl_breakdown = QLabel("")
+        self._lbl_breakdown = CaptionLabel("")
         layout.addWidget(self._lbl_breakdown)
 
-        self._table = QTableWidget(0, 6)
+        self._table = TableWidget(self)
+        self._table.setColumnCount(6)
         self._table.setHorizontalHeaderLabels([
             t("kms-import-manual-title"), t("kms-import-manual-authors"),
             t("kms-import-manual-year"), "EBM", t("sidebar-filter-search-scope"),
             t("sidebar-filter-specialty"),
         ])
+        self._table.verticalHeader().hide()
         self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.cellDoubleClicked.connect(self._on_open_paper)
+        self._table.setBorderRadius(8)
+        self._table.setBorderVisible(True)
         layout.addWidget(self._table, 1)
 
     # ------------------------------------------------------------------
@@ -77,7 +105,7 @@ class SearchPage(QWidget):
 
     def _on_search(self) -> None:
         q = self._ed_query.text().strip()
-        scope = self._main.current_filters().get("scope", "all")
+        scope = self._cmb_scope.currentData() or "all"
         if not q:
             return
         self._results = search_papers(q, scope=scope)
@@ -97,9 +125,10 @@ class SearchPage(QWidget):
             parts.append(f"{level}={counts[level]}")
         if counts[""]:
             parts.append(f"?={counts['']}")
-        self._lbl_breakdown.setText("  ".join(parts))
+        self._lbl_breakdown.setText("  ·  ".join(parts))
 
     def _render_table(self) -> None:
+        from PyQt6.QtWidgets import QTableWidgetItem
         self._table.setRowCount(len(self._results))
         for r, paper in enumerate(self._results):
             cells = [

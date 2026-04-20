@@ -231,3 +231,9 @@ status-deleted = Deleted { $count } papers.
 status-renamed = Renamed { $count } files.
 status-extracting-figures = Extracting figures from PDF...
 status-extracted = Extracted { $count } figures.
+
+# Theme (Fluent migration)
+kms-settings-theme = Theme
+kms-settings-theme-auto = Follow system
+kms-settings-theme-light = Light
+kms-settings-theme-dark = Dark

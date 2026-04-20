@@ -42,4 +42,6 @@ Expose it in `pyproject.toml` under `[project.scripts]`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE) for attribution to FeelUOwn.
+GPL-3.0-or-later. See [LICENSE](LICENSE) for full text and attribution to
+FeelUOwn (scaffold), SciKMS v3.1 / y-khoa (domain), and PyQt6-Fluent-Widgets
+(UI styling — also GPL-3.0).

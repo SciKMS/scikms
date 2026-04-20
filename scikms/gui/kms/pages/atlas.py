@@ -1,4 +1,4 @@
-"""Atlas page — figure browser grouped by paper."""
+"""Atlas page — figure browser with Fluent list, cards, and filters."""
 
 from __future__ import annotations
 
@@ -7,8 +7,13 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import (
-    QComboBox, QHBoxLayout, QLabel, QLineEdit, QListView, QListWidget,
-    QListWidgetItem, QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget,
+    QHBoxLayout, QListView, QListWidget, QListWidgetItem, QSplitter,
+    QVBoxLayout, QWidget,
+)
+from qfluentwidgets import (
+    BodyLabel, CardWidget, CaptionLabel, ComboBox, FluentIcon, InfoBar,
+    InfoBarPosition, MessageBox, PushButton, SearchLineEdit, StrongBodyLabel,
+    SubtitleLabel,
 )
 
 from scikms.i18n import t
@@ -30,64 +35,77 @@ class AtlasPage(QWidget):
         self._df = None
         self._build()
 
-    # ------------------------------------------------------------------
     def _build(self) -> None:
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"<h2>{t('kms-atlas-title')}</h2>"))
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
 
-        self._lbl_summary = QLabel("")
-        layout.addWidget(self._lbl_summary)
+        layout.addWidget(SubtitleLabel(t("kms-atlas-title")))
 
-        bar = QHBoxLayout()
-        self._ed_q = QLineEdit()
+        self._summary_card = CardWidget(self)
+        self._summary_card.setBorderRadius(8)
+        sc = QHBoxLayout(self._summary_card)
+        sc.setContentsMargins(16, 12, 16, 12)
+        self._lbl_summary = BodyLabel("")
+        sc.addWidget(self._lbl_summary)
+        sc.addStretch(1)
+        layout.addWidget(self._summary_card)
+
+        filter_card = CardWidget(self)
+        filter_card.setBorderRadius(8)
+        fc = QHBoxLayout(filter_card)
+        fc.setContentsMargins(12, 8, 12, 8)
+        fc.setSpacing(8)
+        self._ed_q = SearchLineEdit(self)
         self._ed_q.setPlaceholderText(t("kms-atlas-search-prompt"))
         self._ed_q.textChanged.connect(self._refresh_grid)
-        bar.addWidget(self._ed_q, 1)
+        fc.addWidget(self._ed_q, 1)
 
-        self._cmb_type = QComboBox()
+        self._cmb_type = ComboBox(self)
         self._cmb_type.addItem(_ALL)
         self._cmb_type.addItems(list(FIGURE_TYPE_KEYWORDS.keys()) + ["other"])
         self._cmb_type.currentIndexChanged.connect(self._refresh_grid)
-        bar.addWidget(QLabel(t("kms-atlas-filter-type") + ":"))
-        bar.addWidget(self._cmb_type)
+        fc.addWidget(CaptionLabel(t("kms-atlas-filter-type") + ":"))
+        fc.addWidget(self._cmb_type)
 
-        self._cmb_domain = QComboBox()
+        self._cmb_domain = ComboBox(self)
         self._cmb_domain.addItem(_ALL)
         self._cmb_domain.addItems(list(SUBJECT_DOMAIN_KEYWORDS.keys()) + ["general"])
         self._cmb_domain.currentIndexChanged.connect(self._refresh_grid)
-        bar.addWidget(QLabel(t("kms-atlas-filter-domain") + ":"))
-        bar.addWidget(self._cmb_domain)
+        fc.addWidget(CaptionLabel(t("kms-atlas-filter-domain") + ":"))
+        fc.addWidget(self._cmb_domain)
 
-        self._cmb_conf = QComboBox()
+        self._cmb_conf = ComboBox(self)
         self._cmb_conf.addItems([_ALL, "high", "medium", "low"])
         self._cmb_conf.currentIndexChanged.connect(self._refresh_grid)
-        bar.addWidget(QLabel(t("kms-atlas-filter-confidence") + ":"))
-        bar.addWidget(self._cmb_conf)
-
-        layout.addLayout(bar)
+        fc.addWidget(CaptionLabel(t("kms-atlas-filter-confidence") + ":"))
+        fc.addWidget(self._cmb_conf)
+        layout.addWidget(filter_card)
 
         split = QSplitter(Qt.Orientation.Horizontal, self)
         self._grid = QListWidget()
         self._grid.setViewMode(QListView.ViewMode.IconMode)
         self._grid.setIconSize(QSize(160, 120))
         self._grid.setResizeMode(QListView.ResizeMode.Adjust)
-        self._grid.setSpacing(8)
+        self._grid.setSpacing(10)
         self._grid.itemSelectionChanged.connect(self._on_select)
         split.addWidget(self._grid)
 
-        self._detail = QWidget()
-        d_lay = QVBoxLayout(self._detail)
-        self._lbl_caption = QLabel("")
+        detail_card = CardWidget(self)
+        detail_card.setBorderRadius(8)
+        d_lay = QVBoxLayout(detail_card)
+        d_lay.setContentsMargins(16, 14, 16, 14)
+        self._lbl_caption = BodyLabel("")
         self._lbl_caption.setWordWrap(True)
         d_lay.addWidget(self._lbl_caption)
-        self._lbl_full_image = QLabel("")
+        self._lbl_full_image = BodyLabel("")
         self._lbl_full_image.setMinimumSize(300, 300)
         self._lbl_full_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         d_lay.addWidget(self._lbl_full_image, 1)
-        self._btn_delete = QPushButton(t("kms-atlas-delete-figure"))
+        self._btn_delete = PushButton(FluentIcon.DELETE, t("kms-atlas-delete-figure"))
         self._btn_delete.clicked.connect(self._on_delete)
         d_lay.addWidget(self._btn_delete)
-        split.addWidget(self._detail)
+        split.addWidget(detail_card)
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 2)
         layout.addWidget(split, 1)
@@ -156,9 +174,9 @@ class AtlasPage(QWidget):
         ctx = row.get("context", "") or ""
         self._lbl_caption.setText(
             f"<b>{row.get('fig_num','?')}</b>  "
-            f"<span style='color:#666'>{row.get('book_name','')}</span><br>"
+            f"<span style='opacity:.6'>{row.get('book_name','')}</span><br>"
             f"<i>{cap[:200]}</i><br>"
-            f"<small style='color:#888'>{ctx[:300]}</small>"
+            f"<small style='opacity:.5'>{ctx[:300]}</small>"
         )
         img = ATLAS_ROOT / (row.get("image_path") or "")
         if img.exists():
@@ -176,11 +194,11 @@ class AtlasPage(QWidget):
         if not items:
             return
         idx = items[0].data(Qt.ItemDataRole.UserRole)
-        ans = QMessageBox.question(
-            self, t("common-confirm"), t("confirm-delete-figure"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if ans == QMessageBox.StandardButton.Yes:
+        box = MessageBox(t("common-confirm"), t("confirm-delete-figure"), self)
+        if box.exec():
             atlas_delete_figure(idx)
             self.refresh()
-            self._main.refresh_sidebar_stats()
+            InfoBar.success(
+                title=t("common-success"), content="",
+                parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000,
+            )

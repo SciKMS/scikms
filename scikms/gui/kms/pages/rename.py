@@ -1,4 +1,4 @@
-"""Rename page — bulk rename PDFs on disk to canonical pattern."""
+"""Rename page — bulk rename PDFs to canonical pattern. Fluent-styled."""
 
 from __future__ import annotations
 
@@ -9,10 +9,14 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QCheckBox, QHBoxLayout, QHeaderView, QLabel, QPushButton, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget,
+    QAbstractItemView, QHBoxLayout, QHeaderView, QTableWidgetItem, QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import (
+    BodyLabel, CardWidget, CaptionLabel, CheckBox, FluentIcon, InfoBar,
+    InfoBarPosition, PrimaryPushButton, PushButton, StrongBodyLabel,
+    SubtitleLabel, TableWidget,
 )
 
 from scikms.i18n import t
@@ -28,44 +32,52 @@ class RenamePage(QWidget):
     def __init__(self, main_window: "MainWindow") -> None:
         super().__init__()
         self._main = main_window
-        self._candidates: list[tuple[int, Path, str]] = []  # (paper_id, current_path, new_name)
+        self._candidates: list[tuple[int, Path, str]] = []
         self._build()
 
     def _build(self) -> None:
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"<h2>{t('kms-rename-title')}</h2>"))
-        layout.addWidget(QLabel(t("kms-rename-pattern-info")))
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
 
-        path_row = QHBoxLayout()
-        self._lbl_path = QLabel(f"{t('kms-rename-storage-path')}: {STORAGE_DIR}")
-        path_row.addWidget(self._lbl_path)
-        btn_open = QPushButton(t("kms-rename-open-folder"))
+        layout.addWidget(SubtitleLabel(t("kms-rename-title")))
+        layout.addWidget(CaptionLabel(t("kms-rename-pattern-info")))
+
+        path_card = CardWidget(self)
+        path_card.setBorderRadius(8)
+        pc = QHBoxLayout(path_card)
+        pc.setContentsMargins(14, 10, 14, 10)
+        self._lbl_path = BodyLabel(f"{t('kms-rename-storage-path')}: {STORAGE_DIR}")
+        pc.addWidget(self._lbl_path, 1)
+        btn_open = PushButton(FluentIcon.FOLDER, t("kms-rename-open-folder"))
         btn_open.clicked.connect(self._open_folder)
-        path_row.addWidget(btn_open)
-        path_row.addStretch(1)
-        layout.addLayout(path_row)
+        pc.addWidget(btn_open)
+        layout.addWidget(path_card)
 
-        self._chk_skip = QCheckBox(t("kms-rename-skip-existing"))
+        row = QHBoxLayout()
+        self._chk_skip = CheckBox(t("kms-rename-skip-existing"))
         self._chk_skip.setChecked(True)
         self._chk_skip.toggled.connect(self.refresh)
-        layout.addWidget(self._chk_skip)
-
-        btn_preview = QPushButton(t("kms-rename-preview"))
+        row.addWidget(self._chk_skip)
+        btn_preview = PushButton(FluentIcon.VIEW, t("kms-rename-preview"))
         btn_preview.clicked.connect(self.refresh)
-        layout.addWidget(btn_preview)
+        row.addWidget(btn_preview)
+        row.addStretch(1)
+        layout.addLayout(row)
 
-        self._table = QTableWidget(0, 3)
+        self._table = TableWidget(self)
+        self._table.setColumnCount(3)
         self._table.setHorizontalHeaderLabels(["ID", "Current", "New name"])
+        self._table.verticalHeader().hide()
         self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._table.setBorderRadius(8)
+        self._table.setBorderVisible(True)
         layout.addWidget(self._table, 1)
 
-        self._btn_execute = QPushButton(t("kms-rename-execute", count=0))
+        self._btn_execute = PrimaryPushButton(FluentIcon.PLAY, t("kms-rename-execute", count=0))
         self._btn_execute.clicked.connect(self._execute)
         layout.addWidget(self._btn_execute)
-
-        self._lbl_status = QLabel("")
-        layout.addWidget(self._lbl_status)
 
     # ------------------------------------------------------------------
     def refresh(self) -> None:
@@ -84,7 +96,6 @@ class RenamePage(QWidget):
     def _render(self) -> None:
         if not self._candidates:
             self._table.setRowCount(0)
-            self._lbl_status.setText(t("kms-rename-no-pdf"))
             self._btn_execute.setText(t("kms-rename-execute", count=0))
             self._btn_execute.setEnabled(False)
             return
@@ -95,7 +106,6 @@ class RenamePage(QWidget):
             self._table.setItem(r, 2, QTableWidgetItem(new))
         self._btn_execute.setText(t("kms-rename-execute", count=len(self._candidates)))
         self._btn_execute.setEnabled(True)
-        self._lbl_status.setText("")
 
     def _execute(self) -> None:
         if not self._candidates:
@@ -111,7 +121,10 @@ class RenamePage(QWidget):
                 renamed += 1
             except OSError:
                 continue
-        self._lbl_status.setText(t("status-renamed", count=renamed))
+        InfoBar.success(
+            title=t("status-renamed", count=renamed), content="",
+            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2500,
+        )
         self.refresh()
 
     def _open_folder(self) -> None:

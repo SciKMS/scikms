@@ -1,17 +1,19 @@
-"""scikms.gui.kms.main_window — KMS main window."""
+"""scikms.gui.kms.main_window — KMS main window using FluentWindow.
+
+The Fluent navigation bar is on the left (NavigationInterface). Each page is
+a sub-interface, registered via :meth:`addSubInterface`. There is no separate
+sidebar widget anymore — per-page filters live inside each page.
+"""
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import (
-    QMainWindow, QStackedWidget, QStatusBar, QMenuBar, QMessageBox,
+from PyQt6.QtCore import pyqtSignal
+from qfluentwidgets import (
+    FluentIcon, FluentWindow, NavigationItemPosition, setTheme, Theme,
 )
 
 from scikms.i18n import t
-from scikms.kms.config import NAV_ITEMS
 
-from .sidebar import Sidebar
 from .pages.atlas import AtlasPage
 from .pages.export import ExportPage
 from .pages.import_page import ImportPage
@@ -22,8 +24,21 @@ from .pages.settings import SettingsPage
 from .pages.stats import StatsPage
 
 
-class MainWindow(QMainWindow):
-    """Top-level window. Hosts sidebar dock + stacked page area + status bar."""
+# (page_key, icon_attr_name, label_key) — icon names mapped to FluentIcon enum.
+_PAGES: list[tuple[str, str, str]] = [
+    ("library",  "LIBRARY",  "nav-library"),
+    ("import",   "DOWNLOAD", "nav-import"),
+    ("search",   "SEARCH",   "nav-search"),
+    ("atlas",    "PHOTO",    "nav-atlas"),
+    ("stats",    "PIE_SINGLE", "nav-stats"),
+    ("rename",   "EDIT",     "nav-rename"),
+    ("export",   "SHARE",    "nav-export"),
+    ("settings", "SETTING",  "nav-settings"),
+]
+
+
+class MainWindow(FluentWindow):
+    """Top-level Fluent window. Hosts navigation + stacked content."""
 
     page_changed = pyqtSignal(str)
 
@@ -43,67 +58,45 @@ class MainWindow(QMainWindow):
             "settings": SettingsPage(self),
         }
 
-        self._stack = QStackedWidget(self)
-        self._key_to_index: dict[str, int] = {}
+        # Each page widget needs an objectName for FluentWindow's stack routing.
         for key, page in self._pages.items():
-            self._key_to_index[key] = self._stack.addWidget(page)
-        self.setCentralWidget(self._stack)
+            page.setObjectName(f"kms-page-{key}")
 
-        self._sidebar = Sidebar(self)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._sidebar)
-        self._sidebar.nav_clicked.connect(self.show_page)
-        self._sidebar.filters_changed.connect(self._on_filters_changed)
+        # Navigation: 7 main items at top, settings at bottom.
+        for key, icon_name, label_key in _PAGES:
+            position = (
+                NavigationItemPosition.BOTTOM if key == "settings"
+                else NavigationItemPosition.TOP
+            )
+            icon = getattr(FluentIcon, icon_name, FluentIcon.HOME)
+            self.addSubInterface(self._pages[key], icon, t(label_key), position)
 
-        self.setStatusBar(QStatusBar(self))
-        self._build_menus()
-
+        self.stackedWidget.currentChanged.connect(self._on_page_changed)
         self.show_page("library")
 
     # ------------------------------------------------------------------
-    def _build_menus(self) -> None:
-        bar: QMenuBar = self.menuBar()
-        file_menu = bar.addMenu("&File")
-        exit_act = QAction(t("common-close"), self)
-        exit_act.triggered.connect(self.close)
-        file_menu.addAction(exit_act)
-
-        view_menu = bar.addMenu("&View")
-        for item in NAV_ITEMS:
-            act = QAction(t(item["label_key"]), self)
-            act.triggered.connect(lambda _checked=False, k=item["key"]: self.show_page(k))
-            view_menu.addAction(act)
-
-        help_menu = bar.addMenu("&Help")
-        about_act = QAction(t("kms-settings-about"), self)
-        about_act.triggered.connect(self._show_about)
-        help_menu.addAction(about_act)
-
-    def _show_about(self) -> None:
-        QMessageBox.about(
-            self, t("kms-settings-about"),
-            f"{t('kms-app-title')}\n\n{t('kms-settings-version')}: 0.1.0\n\n"
-            "PyQt6 port of SciKMS v3.1 (https://github.com/...)",
-        )
-
-    # ------------------------------------------------------------------
     def show_page(self, key: str) -> None:
-        if key not in self._key_to_index:
-            return
-        self._stack.setCurrentIndex(self._key_to_index[key])
         page = self._pages.get(key)
-        if hasattr(page, "refresh"):
-            page.refresh()
-        self.page_changed.emit(key)
-        self._sidebar.set_active(key)
-        self.statusBar().showMessage(t(f"nav-{key}"), 2000)
+        if not page:
+            return
+        self.switchTo(page)
 
+    def _on_page_changed(self, _idx: int) -> None:
+        page = self.stackedWidget.currentWidget()
+        for key, p in self._pages.items():
+            if p is page:
+                if hasattr(page, "refresh"):
+                    page.refresh()
+                self.page_changed.emit(key)
+                return
+
+    # Backwards-compat shims so existing pages don't break.
     def current_filters(self) -> dict:
-        return self._sidebar.current_filters()
-
-    def _on_filters_changed(self) -> None:
-        page = self._stack.currentWidget()
-        if hasattr(page, "refresh"):
-            page.refresh()
+        """Legacy filter accessor. Filters now live per-page."""
+        return {
+            "status": "all", "starred": False, "project": "",
+            "evidence": "", "design": "", "specialty": "", "scope": "all",
+        }
 
     def refresh_sidebar_stats(self) -> None:
-        self._sidebar.refresh_stats()
+        """No-op kept for legacy callers; stats live in StatsPage now."""

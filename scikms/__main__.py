@@ -26,13 +26,37 @@ def main() -> None:
     except Exception:
         pass
 
+    # HiDPI rounding (must be set before QApplication) for crisp Fluent rendering.
+    from PyQt6.QtCore import Qt
+    try:
+        from PyQt6.QtGui import QGuiApplication
+        QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        )
+    except Exception:
+        pass
+
     from PyQt6.QtWidgets import QApplication
+    from qfluentwidgets import Theme, setTheme, setThemeColor
+
     from scikms.kms.db import init_db
     from scikms.gui.kms.main_window import MainWindow
 
     init_db()
 
     app = QApplication.instance() or QApplication(sys.argv)
+
+    # Theme: read user choice (auto/light/dark), default AUTO. Indigo accent matches
+    # the upstream y-khoa CSS palette.
+    try:
+        from PyQt6.QtCore import QSettings
+        chosen_theme = (QSettings("scikms", "kms").value("theme", "auto") or "auto").lower()
+    except Exception:
+        chosen_theme = "auto"
+    theme_map = {"auto": Theme.AUTO, "light": Theme.LIGHT, "dark": Theme.DARK}
+    setTheme(theme_map.get(chosen_theme, Theme.AUTO))
+    setThemeColor("#4338CA")
+
     win = MainWindow()
     win.show()
     sys.exit(app.exec())

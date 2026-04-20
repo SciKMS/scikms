@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scikms"
-version = "0.1.0"
+version = "0.0.1"
 description = "SciKMS — clinical knowledge manager. PyQt6 desktop app for medical research papers (Vietnamese + English)."
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
+license = "GPL-3.0-or-later"
 authors = [{ name = "scikms contributors" }]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -33,6 +33,7 @@ dependencies = [
     "pillow>=10.0",
     "openpyxl>=3.1",
     "pyarrow>=14.0",
+    "pyqt6-fluent-widgets[full]>=1.7",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +53,7 @@ dev = [
     "pylint",
     "mypy",
     "yapf",
+    "pyinstaller>=6.19.0",
 ]
 
 [project.scripts]

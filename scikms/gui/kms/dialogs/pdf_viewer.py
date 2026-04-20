@@ -1,8 +1,4 @@
-"""PDF viewer dialog with side note editor.
-
-Tries PyQt6.QtPdf for embedded rendering. Falls back to opening the system
-viewer if QtPdf is unavailable (or the file is missing).
-"""
+"""PDF viewer dialog with side notes panel. Fluent-styled chrome, QtPdf body."""
 
 from __future__ import annotations
 
@@ -12,9 +8,11 @@ import sys
 from pathlib import Path
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMessageBox, QPlainTextEdit,
-    QSplitter, QVBoxLayout, QWidget,
+from PyQt6.QtWidgets import QDialog, QHBoxLayout, QSplitter, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel, CaptionLabel, FluentIcon, InfoBar, InfoBarPosition,
+    PlainTextEdit, PrimaryPushButton, PushButton, StrongBodyLabel,
+    SubtitleLabel,
 )
 
 from scikms.i18n import t
@@ -38,10 +36,20 @@ class PdfViewerDialog(QDialog):
         self.resize(1100, 760)
 
         layout = QVBoxLayout(self)
-        meta = QLabel(self._build_meta_html())
-        meta.setTextFormat(Qt.TextFormat.RichText)
-        meta.setWordWrap(True)
-        layout.addWidget(meta)
+        layout.setContentsMargins(16, 14, 16, 14)
+        layout.setSpacing(8)
+
+        layout.addWidget(SubtitleLabel((paper.get("title") or t("common-untitled"))[:140]))
+        layout.addWidget(BodyLabel(
+            f"<i>{paper.get('authors') or ''}</i> · {paper.get('journal') or ''} "
+            f"({paper.get('year') or '?'})"
+        ))
+        layout.addWidget(CaptionLabel(
+            f"DOI: {paper.get('doi') or '—'}  ·  "
+            f"EBM: {paper.get('evidence_level') or '—'}  ·  "
+            f"{paper.get('study_design') or '—'}  ·  "
+            f"{paper.get('clinical_specialty') or '—'}"
+        ))
 
         split = QSplitter(Qt.Orientation.Horizontal, self)
         split.addWidget(self._build_pdf_pane())
@@ -50,22 +58,12 @@ class PdfViewerDialog(QDialog):
         split.setStretchFactor(1, 1)
         layout.addWidget(split, 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.reject)
-        buttons.accepted.connect(self.accept)
-        layout.addWidget(buttons)
-
-    def _build_meta_html(self) -> str:
-        p = self._paper
-        return (
-            f"<b>{(p.get('title') or t('common-untitled'))[:200]}</b><br>"
-            f"<i>{p.get('authors') or ''}</i> · {p.get('journal') or ''} "
-            f"({p.get('year') or '?'})<br>"
-            f"DOI: {p.get('doi') or '—'}  ·  "
-            f"EBM: {p.get('evidence_level') or '—'}  ·  "
-            f"{t('sidebar-filter-design')}: {p.get('study_design') or '—'}  ·  "
-            f"{t('sidebar-filter-specialty')}: {p.get('clinical_specialty') or '—'}"
-        )
+        bar = QHBoxLayout()
+        bar.addStretch(1)
+        close_btn = PushButton(FluentIcon.CLOSE, t("common-close"))
+        close_btn.clicked.connect(self.accept)
+        bar.addWidget(close_btn)
+        layout.addLayout(bar)
 
     def _build_pdf_pane(self) -> QWidget:
         wrap = QWidget()
@@ -74,7 +72,7 @@ class PdfViewerDialog(QDialog):
 
         fp = self._paper.get("file_path") or ""
         if not fp or not Path(fp).exists():
-            lbl = QLabel(f"<i>{t('common-empty')}</i>  ({fp or '—'})")
+            lbl = BodyLabel(f"<i>{t('common-empty')}</i>  ({fp or '—'})")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lay.addWidget(lbl, 1)
             return wrap
@@ -88,15 +86,11 @@ class PdfViewerDialog(QDialog):
             lay.addWidget(view, 1)
             return wrap
 
-        # Fallback: button to open in system viewer.
-        info = QLabel(
-            f"<i>QtPdf not available. PDF stored at:</i><br><tt>{fp}</tt>"
-        )
+        info = BodyLabel(f"<i>QtPdf not available. File:</i><br><tt>{fp}</tt>")
         info.setWordWrap(True)
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addWidget(info)
-        from PyQt6.QtWidgets import QPushButton
-        btn = QPushButton(t("kms-library-paper-open"))
+        btn = PrimaryPushButton(FluentIcon.VIEW, t("kms-library-paper-open"))
         btn.clicked.connect(lambda: _open_external(fp))
         lay.addWidget(btn)
         return wrap
@@ -104,19 +98,22 @@ class PdfViewerDialog(QDialog):
     def _build_notes_pane(self) -> QWidget:
         wrap = QWidget()
         lay = QVBoxLayout(wrap)
-        lay.addWidget(QLabel(f"<b>{t('kms-atlas-detail-notes')}</b>"))
-        self._txt = QPlainTextEdit()
+        lay.setSpacing(6)
+        lay.addWidget(StrongBodyLabel(t("kms-atlas-detail-notes")))
+        self._txt = PlainTextEdit()
         self._txt.setPlainText(self._paper.get("notes") or "")
         lay.addWidget(self._txt, 1)
-        from PyQt6.QtWidgets import QPushButton
-        btn = QPushButton(t("common-save"))
+        btn = PrimaryPushButton(FluentIcon.SAVE, t("common-save"))
         btn.clicked.connect(self._save_notes)
         lay.addWidget(btn)
         return wrap
 
     def _save_notes(self) -> None:
         update_paper(self._paper_id, {"notes": self._txt.toPlainText()})
-        QMessageBox.information(self, t("common-success"), t("common-success"))
+        InfoBar.success(
+            title=t("common-success"), content="",
+            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000,
+        )
 
 
 def _open_external(path: str) -> None:

@@ -1,30 +1,47 @@
-MIT License
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
 
-Copyright (c) 2026 scikms contributors
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+scikms — clinical knowledge manager
+Copyright (C) 2026 scikms contributors
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
----
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-scikms was extracted from FeelUOwn (https://github.com/feeluown/FeelUOwn)
-by stripping music-player-specific code and keeping the PyQt6 application
-scaffold, plugin system, DSL parser, i18n framework, and server infrastructure.
-FeelUOwn is licensed under GPL-3.0-or-later; this extraction preserves only
-non-substantial framework scaffolding. Audit your own attribution obligations
-before redistributing.
+----------------------------------------------------------------------
+
+The full text of GPL-3.0-or-later is available at:
+https://www.gnu.org/licenses/gpl-3.0.txt
+
+----------------------------------------------------------------------
+
+Attribution
+
+scikms is derived from two upstream projects:
+
+1. FeelUOwn (https://github.com/feeluown/FeelUOwn) — GPL-3.0-or-later.
+   The PyQt6 application scaffold (plugin system, i18n framework, DSL/RPC
+   server infrastructure, utilities, app modes) was extracted from FeelUOwn
+   v5.x by stripping music-player-specific code.
+
+2. SciKMS v3.1 / y-khoa (private) — clinical knowledge manager.
+   The domain layer (SQLite schema, EBM/PICO/specialty classifiers, PDF/DOI
+   /PubMed importers, figure atlas extraction) and the user-facing UX
+   structure (8-page navigation, library/search/atlas/stats workflow) were
+   ported from the Streamlit original to PyQt6.
+
+UI styling uses PyQt6-Fluent-Widgets (https://github.com/zhiyiYo/PyQt-Fluent-Widgets),
+which is GPL-3.0-or-later licensed.

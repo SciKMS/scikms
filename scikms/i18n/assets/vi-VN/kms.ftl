@@ -234,3 +234,9 @@ status-deleted = Đã xóa { $count } bài.
 status-renamed = Đã đổi tên { $count } file.
 status-extracting-figures = Đang trích xuất hình từ PDF...
 status-extracted = Đã trích xuất { $count } hình.
+
+# Theme (Fluent migration)
+kms-settings-theme = Giao diện
+kms-settings-theme-auto = Theo hệ thống
+kms-settings-theme-light = Sáng
+kms-settings-theme-dark = Tối

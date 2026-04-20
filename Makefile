@@ -1,4 +1,5 @@
-.PHONY: all pytest lint flake8 pylint mypy yapf clean clean_py clean_emacs
+.PHONY: all pytest lint flake8 pylint mypy yapf clean clean_py clean_emacs \
+        bundle bundle-mac bundle-win bundle-clean dmg sign-mac
 
 all: pytest
 
@@ -13,8 +14,8 @@ flake8:
 # Start narrow; widen PYLINT_PKGS as you stabilize more of the tree.
 PYLINT_PKGS=
 PYLINT_PKGS+=scikms/plugin.py
-PYLINT_PKGS+=scikms/fuoexec/
 PYLINT_PKGS+=scikms/server/
+PYLINT_PKGS+=scikms/kms/
 
 pylint:
 	uv run pylint ${PYLINT_PKGS}
@@ -50,3 +51,30 @@ clean_emacs:
 	find . -name "*~" -delete
 	find . -name "#*#" -delete
 	find . -name ".#*" -delete
+
+# -- bundle (PyInstaller) --
+# scikms.spec auto-detects platform; same command works on macOS and Windows.
+# Requires `uv add --dev pyinstaller` first.
+
+bundle:
+	uv run --with pyinstaller pyinstaller --noconfirm scikms.spec
+
+bundle-mac: bundle
+	@echo "→ dist/SciKMS.app  (drag to /Applications)"
+	@du -sh dist/SciKMS.app 2>/dev/null || true
+
+bundle-win: bundle
+	@echo "→ dist/SciKMS/SciKMS.exe  (folder mode; ship the whole folder)"
+
+# Optional: ad-hoc codesign so macOS Gatekeeper stops nagging on personal builds.
+sign-mac:
+	codesign --force --deep --sign - dist/SciKMS.app
+
+# Optional: build a .dmg installer (requires `brew install create-dmg`).
+dmg: bundle-mac
+	create-dmg --volname "SciKMS" --window-size 540 380 \
+	  --icon "SciKMS.app" 140 190 --app-drop-link 400 190 \
+	  dist/SciKMS-0.1.0.dmg dist/SciKMS.app
+
+bundle-clean:
+	rm -rf build dist *.spec.bak
