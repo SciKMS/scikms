@@ -1,0 +1,115 @@
+QWidget {
+    /* font-size: 13px; */
+    /* tips: you can turn on border for debugging */
+    /* border: 1px solid red; */
+}
+
+LeftPanel QLabel, LeftPanel TriagleButton, LeftPanel PlusButton {
+    color: #888;
+}
+
+LeftPanel QLabel {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+LeftPanel QLabel, LeftPanel ListViewContainer TextButton {
+    font-size: 12px;
+}
+
+LeftPanel QListView, QSplitter::handle {
+    background-color: transparent;
+}
+
+MagicBox {
+    background: transparent;
+    border: 1px solid grey;
+    border-radius: 2px;
+}
+MagicBox:focus {
+    border: 1px solid palette(text);
+    outline: none;
+}
+
+/*
+ * buttons
+ */
+PlayerControlPanel IconButton, VolumeButton, #playlist_btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    outline: none;
+}
+PlayerControlPanel IconButton:hover, VolumeButton:hover{
+    /* just to make button (looks) smaller */
+    border-width: 3px;
+}
+#volume_btn:checked {
+    border-width: 3px;
+}
+SongSourceTag {
+    outline: none;
+    border-radius: 2px;
+    color: #888;
+    border: 1px solid #999;
+}
+PlayerControlPanel QPushButton:hover,
+PlayerControlPanel QPushButton:focus
+{
+    outline: none;
+}
+
+TextButton {
+    height: 18px;
+    background-color: transparent;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+VideoPlayerCtlBar Button {
+    padding: 0px;
+}
+
+ToolbarButton {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    font-size: 15px;
+    border: 0px;
+}
+TextButton:hover, ToolbarButton:hover {
+    border: 1px solid #777;
+}
+TextButton:checked {
+    border: 1px solid #d75a4a;  /* same as like_btn red color */
+    color: #d75a4a;
+}
+
+LeftPanel ListViewContainer TextButton, ClickableHeader TextButton {
+    border: none;
+    color: #888;
+}
+LeftPanel ListViewContainer TextButton:hover, ClickableHeader TextButton:hover {
+    color: palette(text);
+    border: none;
+}
+ClickableHeader TextButton:checked {
+    color: palette(text);
+    border: none;
+}
+
+#mv_btn, #toggle_lyric_btn {
+    font-size: 9px;
+}
+#mv_btn {
+    padding: 0px 3px;
+}
+#toggle_lyric_btn {
+    padding: 0px 5px;
+}
+
+VideoCtlToolbar QPushButton {
+    width: 24px;
+    height: 24px;
+    outline: none;
+}

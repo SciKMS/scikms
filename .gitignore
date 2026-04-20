@@ -1,0 +1,54 @@
+# IDEs
+.idea/
+.iml
+.settings/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.py~
+*.swp
+*.swo
+*.un~
+
+# Packaging / build
+*.whl
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# uv / venv
+.venv/
+.python-version~
+
+# Tests / type check / coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS
+*.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Editor scratch
+*.bak
+\#*\#
+.\#*
+.dir-locals.el
+
+# rope
+*.out
+.ropeproject/
+
+# Misc
+node_modules/
+.aider*
+.tasks/

@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scikms"
+version = "0.1.0"
+description = "Scikms — a PyQt6 application scaffold extracted from FeelUOwn."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "scikms contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Environment :: X11 Applications :: Qt",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "PyQt6",
+    "fluent-runtime>=0.4.0",
+    "langcodes>=3.5.1",
+    "qasync",
+    "requests",
+    "janus",
+]
+
+[project.optional-dependencies]
+webengine = ["PyQt6-WebEngine"]
+jsonrpc = ["json-rpc"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+    "pytest-asyncio",
+    "pytest-qt",
+    "pytest-mock",
+    "pytest-cov",
+    "flake8",
+    "Flake8-pyproject",
+    "pylint",
+    "mypy",
+    "yapf",
+]
+
+[project.scripts]
+scikms = "scikms.__main__:main"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "gui/assets/icons/*.png",
+    "gui/assets/icons/*.ico",
+    "gui/assets/icons/*.icns",
+    "gui/assets/themes/*.qss",
+    "gui/assets/themes/*.colors",
+    "i18n/assets/*/*.ftl",
+]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 89
+
+[tool.yapf]
+column_limit = 89
+based_on_style = "pep8"
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+addopts = [
+    "-q",
+    "--cov-report=",
+    "--cov=scikms",
+]
+asyncio_mode = "auto"
+
+[tool.flake8]
+max-line-length = 89
+exclude = [".venv", "build", "dist"]
