@@ -1,0 +1,71 @@
+name: Release · Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build SciKMS.exe
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync dependencies (with pyinstaller)
+        run: uv sync --dev --python 3.12
+
+      - name: Capture version
+        shell: bash
+        run: |
+          echo "SCIKMS_VERSION=$(uv run python -c 'import scikms; print(scikms.__version__)')" >> "$GITHUB_ENV"
+
+      - name: Bundle via PyInstaller
+        run: uv run pyinstaller --noconfirm scikms.spec
+
+      - name: Zip the bundle
+        shell: bash
+        run: |
+          cd dist
+          BASENAME="SciKMS-${SCIKMS_VERSION}-windows-x64"
+          powershell -Command "Compress-Archive -Path SciKMS -DestinationPath ${BASENAME}.zip"
+          ls -lh "${BASENAME}.zip"
+          echo "SCIKMS_ZIP=${BASENAME}.zip" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SCIKMS_ZIP }}
+          path: dist/${{ env.SCIKMS_ZIP }}
+
+      - name: Upload to GitHub Release (tag push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ env.SCIKMS_ZIP }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to nightly tag (main push)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly builds
+          prerelease: true
+          files: dist/${{ env.SCIKMS_ZIP }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

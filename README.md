@@ -1,47 +1,62 @@
-# scikms
+<p align="center">
+  <img src="scikms/assets/logo.jpg" alt="SciKMS" width="220">
+</p>
 
-A PyQt6 application scaffold extracted from [FeelUOwn](https://github.com/feeluown/FeelUOwn).
+<h1 align="center">SciKMS</h1>
 
-## What's in the box
+<p align="center">
+  <strong>Clinical Knowledge Manager</strong> — a desktop app for medical research papers, with evidence-based medicine classifiers, figure atlas, and full-text search. Built for clinicians who read papers every day.
+</p>
 
-- `scikms/app/` — app lifecycle modes (cli / gui / server / mixed) via `AppMode`
-- `scikms/plugin.py` — module-based plugin loader (filesystem + entry points)
-- `scikms/fuoexec/` — DSL parser and evaluator (lexer / parser / eval)
-- `scikms/i18n/` — Mozilla Fluent-based internationalization
-- `scikms/serializers/` — abstract `Serializer` / `Deserializer` registry
-- `scikms/server/` — DSL + JSON-RPC + pub/sub TCP server (bring your own handler)
-- `scikms/utils/` — signals, async helpers, caching, reader pattern, Qt compat
-- `scikms/gui/` — PyQt6 scaffolding: theme, hotkeys, drawers, widgets, components, assets
-- `tests/` — pytest scaffold (asyncio + qt + mock + cov)
+<p align="center">
+  <a href="https://github.com/SciKMS/scikms/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/YOUR_ORG/scikms/build.yml?branch=main&label=tests" alt="tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="license"></a>
+</p>
 
-## What was stripped (music-player code from FeelUOwn)
+---
 
-`player/`, `local/`, `library/`, `nowplaying/`, `webserver/`, `entry_points/`, `ai/`, `mpv.py`, `mcpserver.py`, `media.py`, `collection.py`, `argparser.py`, music-specific widgets/components/pages, music serializers, music server handlers, PyInstaller bundling, integration tests, music assets.
+## What it is
 
-## Requirements
+SciKMS is a **local, offline-first library** for your personal collection of medical research papers. Import PDFs by drag-and-drop, DOI lookup, or PubMed search. The app auto-classifies each paper by evidence level (EBM I–V), study design, and clinical specialty. It extracts figures from the PDF into a browsable atlas, indexes everything with SQLite FTS5 full-text search, and exports to Zotero / EndNote / LaTeX / Excel.
 
-- Python `>=3.10`
-- `uv` (see [installation](https://docs.astral.sh/uv/getting-started/installation/))
+No account. No cloud. Built by doctor 
 
-## Quickstart
 
-```sh
-uv sync
-uv run pytest
+## Install
+
+### Download a prebuilt binary (recommended)
+
+Grab the latest from [Releases](https://github.com/SciKMS/scikms/releases):
+
+- **macOS (arm64):** `SciKMS-<version>-macOS<os>-arm64.zip` — unzip, drag `SciKMS.app` to `/Applications`. First launch: right-click → **Open** (unsigned).
+- **Windows (x64):** `SciKMS-<version>-windows-x64.zip` — unzip, run `SciKMS\SciKMS.exe`.
+
+### Build from source
+
+Requirements: **Python ≥ 3.10**, [`uv`](https://docs.astral.sh/uv/getting-started/installation/).
+
+```bash
+git clone https://github.com/SciKMS/scikms.git
+cd scikms
+uv sync --dev
+
+# Run
+uv run scikms
+
+# Or bundle a distributable:
+make bundle-mac    # → dist/SciKMS.app
+make bundle-win    # → dist\SciKMS\SciKMS.exe  (Windows host)
 ```
 
-## Wire your own entry point
+## Roadmap
 
-```python
-# scikms/__main__.py
-def main() -> None:
-    ...  # build your app
-```
-
-Expose it in `pyproject.toml` under `[project.scripts]`.
+- [ ] TBD
+- [ ] TBD
+- [ ] TBD
+- [ ] TBD
+- [ ] TBD
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE) for full text and attribution to
-FeelUOwn (scaffold), SciKMS v3.1 / y-khoa (domain), and PyQt6-Fluent-Widgets
-(UI styling — also GPL-3.0).
+**GPL-3.0-or-later.** See [LICENSE](LICENSE) for the full text.
+
