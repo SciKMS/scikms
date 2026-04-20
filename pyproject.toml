@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scikms"
 version = "0.1.0"
-description = "Scikms — a PyQt6 application scaffold extracted from FeelUOwn."
+description = "SciKMS — clinical knowledge manager. PyQt6 desktop app for medical research papers (Vietnamese + English)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -28,11 +28,17 @@ dependencies = [
     "qasync",
     "requests",
     "janus",
+    "pymupdf>=1.23",
+    "pandas>=2.0",
+    "pillow>=10.0",
+    "openpyxl>=3.1",
+    "pyarrow>=14.0",
 ]
 
 [project.optional-dependencies]
 webengine = ["PyQt6-WebEngine"]
 jsonrpc = ["json-rpc"]
+ai = ["langchain[openai]"]
 
 [dependency-groups]
 dev = [

@@ -237,7 +237,7 @@ def human_readable_number(n: int, locale: str = None) -> str:
     return str(n)
 
 
-DEFAULT_RESOURCE_IDS = ["app.ftl", "argparser.ftl", "config.ftl"]
+DEFAULT_RESOURCE_IDS = ["kms.ftl"]
 
 
 if __name__ == "__main__":
