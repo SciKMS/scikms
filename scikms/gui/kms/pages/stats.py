@@ -11,9 +11,10 @@ from collections import Counter
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFontDatabase
 from PyQt6.QtWidgets import (
     QAbstractItemView, QGridLayout, QHBoxLayout, QHeaderView, QScrollArea,
-    QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
+    QSizePolicy, QStackedWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
     CardWidget, CaptionLabel, FluentIcon, IconWidget, StrongBodyLabel,
@@ -136,6 +137,16 @@ class StatsPage(QWidget):
         tbl.setHorizontalHeaderLabels(headers)
         tbl.verticalHeader().hide()
         tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        tbl.horizontalHeader().setSectionResizeMode(
+            len(headers) - 1, QHeaderView.ResizeMode.ResizeToContents
+        )
+        # Right-align the count column header so it lines up with the
+        # right-aligned tabular digits in the body below.
+        count_header = tbl.horizontalHeaderItem(len(headers) - 1)
+        if count_header is not None:
+            count_header.setTextAlignment(
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+            )
         tbl.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         # Tables size to their row count (set in _fill_table); the outer
         # scroll area handles overflow of the page as a whole, so internal
@@ -203,11 +214,18 @@ class StatsPage(QWidget):
         self._fill_table(self._tbl_tags, Counter(tag_bag).most_common(15))
 
     def _fill_table(self, tbl: TableWidget, rows: list[tuple]) -> None:
-        from PyQt6.QtWidgets import QTableWidgetItem
+        # System fixed-pitch font gives true tabular digits without
+        # depending on OpenType `tnum` feature availability in the UI font.
+        tabular = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
         tbl.setRowCount(len(rows))
         for r, (key, val) in enumerate(rows):
             tbl.setItem(r, 0, QTableWidgetItem(str(key)))
-            tbl.setItem(r, 1, QTableWidgetItem(str(val)))
+            num_item = QTableWidgetItem(str(val))
+            num_item.setFont(tabular)
+            num_item.setTextAlignment(
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+            )
+            tbl.setItem(r, 1, num_item)
         # Size the table to fit its rows — no internal scroll; the outer
         # page-level scroll area handles overall overflow.
         row_h = tbl.verticalHeader().defaultSectionSize() or 32
