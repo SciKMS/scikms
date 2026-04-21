@@ -23,19 +23,6 @@
         "required_review_thread_resolution": true,
         "allowed_merge_methods": ["squash", "rebase"]
       }
-    },
-    {
-      "type": "required_status_checks",
-      "parameters": {
-        "strict_required_status_checks_policy": true,
-        "do_not_enforce_on_create": false,
-        "required_status_checks": [
-          { "context": "Test · ubuntu-latest · Python 3.10" },
-          { "context": "Test · ubuntu-latest · Python 3.12" },
-          { "context": "Test · macos-latest · Python 3.12" },
-          { "context": "Test · windows-latest · Python 3.12" }
-        ]
-      }
     }
   ],
   "bypass_actors": []

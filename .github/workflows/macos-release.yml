@@ -1,12 +1,23 @@
 name: Release · macOS
 
+# Manual-only. Trigger from the Actions tab → "Release · macOS" → "Run workflow".
 on:
-  push:
-    tags:
-      - "v*"
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      release_mode:
+        description: "Where to publish the build"
+        required: true
+        default: "artifact-only"
+        type: choice
+        options:
+          - artifact-only      # just upload as Action artifact, no Release entry
+          - draft              # create a draft Release at tag (manual publish later)
+          - release            # publish a Release at the chosen tag
+          - nightly            # publish/overwrite the rolling 'nightly' Release
+      version_tag:
+        description: "Tag for draft / release modes (e.g. v0.2.0). Ignored for artifact-only / nightly."
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -15,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-latest (arm64) covers Apple Silicon. Add macos-13 for Intel if needed.
+        # macos-latest = arm64. Add `macos-13` for Intel x86_64 if needed.
         os: [macos-latest]
 
     steps:
@@ -53,22 +64,26 @@ jobs:
           ls -lh "${BASENAME}.zip"
           echo "SCIKMS_ZIP=${BASENAME}.zip" >> "$GITHUB_ENV"
 
-      - name: Upload build artifact
+      - name: Upload build artifact (always)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.SCIKMS_ZIP }}
           path: dist/${{ env.SCIKMS_ZIP }}
+          retention-days: 30
 
-      - name: Upload to GitHub Release (tag push)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish to GitHub Release (draft / release)
+        if: inputs.release_mode == 'draft' || inputs.release_mode == 'release'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.version_tag }}
+          name: ${{ inputs.version_tag }}
+          draft: ${{ inputs.release_mode == 'draft' }}
           files: dist/${{ env.SCIKMS_ZIP }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload to nightly tag (main push)
-        if: github.ref == 'refs/heads/main'
+      - name: Publish to nightly Release
+        if: inputs.release_mode == 'nightly'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly

@@ -38,12 +38,11 @@ Applied to the repo default branch (`main`).
 - **Require linear history** — merge commits rejected; use squash or rebase
 - **Require PR with 1 approval** — no direct commits; stale approvals dismissed on new push
 - **Require conversation resolution** — all PR comments must be resolved before merge
-- **Require status checks** — the 4 test jobs from [`build.yml`](../workflows/build.yml) must pass:
-  - `Test · ubuntu-latest · Python 3.10`
-  - `Test · ubuntu-latest · Python 3.12`
-  - `Test · macos-latest · Python 3.12`
-  - `Test · windows-latest · Python 3.12`
 - **Allowed merge methods** — squash or rebase only (no merge commits, matching linear-history requirement)
+
+> **Note:** No required status checks are configured. Releases run manually via
+> `workflow_dispatch` and there is no auto-test workflow. If you add a test
+> workflow later, re-add a `required_status_checks` rule listing the job names.
 
 > **Note:** For a solo maintainer project, the `required_approving_review_count: 1`
 > creates a loop since you can't approve your own PR. Either: (a) edit to `0` for
