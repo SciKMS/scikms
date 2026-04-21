@@ -1,27 +1,5 @@
-from .textbtn import TextButton  # noqa
-from .login import CookiesLoginDialog  # noqa
-from .selfpaint_btn import (  # noqa
-    SelfPaintAbstractSquareButton,
-    RecentlyPlayedButton,
-    HomeButton,
-    LeftArrowButton,
-    RightArrowButton,
-    SearchSwitchButton,
-    SettingsButton,
-    PlusButton,
-    TriagleButton,
-    DiscoveryButton,
-    SelfPaintAbstractIconTextButton,
-    CalendarButton,
-    RankButton,
-    StarButton,
-    PlayPauseButton,
-    PlayNextButton,
-    PlayPreviousButton,
-    PlayButton,
-    MVButton,
-    VolumeButton,
-    HotButton,
-    EmojiButton,
-    AIButton,
-)
+# Widgets in this package are imported directly by module path
+# (e.g. ``from scikms.gui.widgets.textbtn import TextButton``). The package
+# itself intentionally exports nothing: keeping this file empty avoids the
+# stale upstream re-exports from FeelUOwn that pointed at missing modules
+# (``login``, ``selfpaint_btn``) and broke ``import scikms.gui.widgets``.
