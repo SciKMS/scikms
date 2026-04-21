@@ -3,6 +3,10 @@ name: Release · macOS
 # Manual-only. Trigger from the Actions tab → "Release · macOS" → "Run workflow".
 on:
   workflow_dispatch:
+
+
+permissions:
+  contents: write
     inputs:
       release_mode:
         description: "Where to publish the build"
