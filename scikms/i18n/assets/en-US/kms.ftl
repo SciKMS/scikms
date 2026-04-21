@@ -150,6 +150,7 @@ kms-atlas-filter-type = Type
 kms-atlas-filter-domain = Domain
 kms-atlas-filter-confidence = Confidence
 kms-atlas-filter-paper = Paper
+kms-atlas-filter-reset = Reset
 kms-atlas-paper-all = All papers
 kms-atlas-detail-empty = Select a figure to see details
 kms-atlas-open-paper = Open paper at page

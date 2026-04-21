@@ -153,6 +153,7 @@ kms-atlas-filter-type = Loại hình
 kms-atlas-filter-domain = Lĩnh vực
 kms-atlas-filter-confidence = Độ tin cậy
 kms-atlas-filter-paper = Bài báo
+kms-atlas-filter-reset = Đặt lại bộ lọc
 kms-atlas-paper-all = Tất cả bài báo
 kms-atlas-detail-empty = Chọn một hình để xem chi tiết
 kms-atlas-open-paper = Mở bài báo tại trang này
