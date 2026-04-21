@@ -14,11 +14,12 @@ from PyQt6.QtWidgets import (
     QStackedWidget, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
-    BodyLabel, CardWidget, CheckBox, FluentIcon, InfoBar, InfoBarPosition,
-    LineEdit, Pivot, PlainTextEdit, PrimaryPushButton, ProgressBar, PushButton,
-    SpinBox, StrongBodyLabel, SubtitleLabel, CaptionLabel,
+    BodyLabel, CardWidget, CaptionLabel, CheckBox, FluentIcon, InfoBar,
+    InfoBarPosition, LineEdit, Pivot, PlainTextEdit, PrimaryPushButton,
+    ProgressBar, PushButton, SpinBox, StrongBodyLabel,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.clinical import (
     auto_tag, build_renamed_filename, classify_all, parse_pico_from_abstract,
@@ -63,7 +64,7 @@ class ImportPage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
-        layout.addWidget(SubtitleLabel(t("kms-import-title")))
+        layout.addWidget(PageHeader(t("kms-import-title")))
         layout.addWidget(CaptionLabel(t("kms-import-pdf-help")))
 
         self._pivot = Pivot(self)

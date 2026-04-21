@@ -12,9 +12,10 @@ from typing import TYPE_CHECKING
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, CardWidget, FluentIcon, IconWidget, InfoBar,
-    InfoBarPosition, PrimaryPushButton, StrongBodyLabel, SubtitleLabel,
+    InfoBarPosition, PrimaryPushButton, StrongBodyLabel,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.atlas import atlas_load
 from scikms.kms.clinical import export_bib, export_ris
@@ -79,7 +80,7 @@ class ExportPage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(10)
 
-        layout.addWidget(SubtitleLabel(t("kms-export-title")))
+        layout.addWidget(PageHeader(t("kms-export-title")))
 
         rows = [
             (FluentIcon.DOCUMENT, "kms-export-ris",       "Zotero / EndNote",

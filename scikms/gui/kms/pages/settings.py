@@ -10,10 +10,11 @@ from qfluentwidgets import (
     BodyLabel, CardWidget, FluentIcon, InfoBar, InfoBarPosition, MessageBox,
     OptionsConfigItem, OptionsSettingCard, OptionsValidator, PlainTextEdit,
     PrimaryPushButton, PushButton, PushSettingCard, QConfig, SettingCardGroup,
-    StrongBodyLabel, SubtitleLabel, Theme, setTheme,
+    StrongBodyLabel, Theme, setTheme,
 )
 
 from scikms import __version__
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms import ATLAS_ROOT, DATA_ROOT
 from scikms.kms.atlas import atlas_count, atlas_load, atlas_save
@@ -78,7 +79,7 @@ class SettingsPage(QWidget):
         outer.setContentsMargins(24, 20, 24, 20)
         outer.setSpacing(12)
 
-        outer.addWidget(SubtitleLabel(t("kms-settings-title")))
+        outer.addWidget(PageHeader(t("kms-settings-title")))
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)

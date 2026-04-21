@@ -20,10 +20,11 @@ from PyQt6.QtWidgets import (
 )
 from qfluentwidgets import (
     CaptionLabel, CardWidget, ComboBox, FluentIcon, InfoBar, InfoBarPosition,
-    PushButton, SearchLineEdit, StrongBodyLabel, SubtitleLabel,
+    PushButton, SearchLineEdit, StrongBodyLabel,
 )
 
 from scikms.gui.kms.dialogs.figure_lightbox import FigureLightboxDialog
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms import ATLAS_ROOT
 from scikms.kms.atlas import atlas_delete_figure, atlas_load, atlas_search
@@ -109,7 +110,7 @@ class AtlasPage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
-        layout.addWidget(SubtitleLabel(t("kms-atlas-title")))
+        layout.addWidget(PageHeader(t("kms-atlas-title")))
 
         filter_card = CardWidget(self)
         filter_card.setBorderRadius(8)

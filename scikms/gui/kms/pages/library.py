@@ -26,10 +26,10 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, CardWidget, CheckBox, ComboBox, FluentIcon,
     InfoBar, InfoBarPosition, MessageBox, RoundMenu, SearchLineEdit, SpinBox,
-    StrongBodyLabel, SubtitleLabel, TransparentPushButton,
-    TransparentToolButton,
+    StrongBodyLabel, TransparentPushButton, TransparentToolButton,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.config import (
     CLINICAL_SPECIALTIES, SORT_OPTIONS, STUDY_DESIGN_KEYWORDS,
@@ -232,7 +232,7 @@ class LibraryPage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(10)
 
-        layout.addWidget(SubtitleLabel(t("kms-library-title")))
+        layout.addWidget(PageHeader(t("kms-library-title")))
         layout.addWidget(self._build_filter_card())
 
         # Scroll area hosting a fixed-width 3-column grid. Columns share equal

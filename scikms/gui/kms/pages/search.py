@@ -8,10 +8,11 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CardWidget, CaptionLabel, ComboBox, FluentIcon, PrimaryPushButton,
-    PushButton, SearchLineEdit, StrongBodyLabel, SubtitleLabel, TableWidget,
+    PushButton, SearchLineEdit, StrongBodyLabel, TableWidget,
     TransparentPushButton,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.config import SEARCH_TEMPLATES
 from scikms.kms.db import get_paper_by_id, search_papers
@@ -32,7 +33,7 @@ class SearchPage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
-        layout.addWidget(SubtitleLabel(t("kms-search-title")))
+        layout.addWidget(PageHeader(t("kms-search-title")))
 
         bar = QHBoxLayout()
         self._ed_query = SearchLineEdit(self)

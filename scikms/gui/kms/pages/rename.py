@@ -16,9 +16,10 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel, CardWidget, CaptionLabel, CheckBox, FluentIcon, InfoBar,
     InfoBarPosition, PrimaryPushButton, PushButton, StrongBodyLabel,
-    SubtitleLabel, TableWidget,
+    TableWidget,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms import STORAGE_DIR
 from scikms.kms.clinical import build_renamed_filename
@@ -40,7 +41,7 @@ class RenamePage(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
-        layout.addWidget(SubtitleLabel(t("kms-rename-title")))
+        layout.addWidget(PageHeader(t("kms-rename-title")))
         layout.addWidget(CaptionLabel(t("kms-rename-pattern-info")))
 
         path_card = CardWidget(self)

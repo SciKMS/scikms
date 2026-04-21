@@ -17,9 +17,10 @@ from PyQt6.QtWidgets import (
 )
 from qfluentwidgets import (
     BodyLabel, CardWidget, CaptionLabel, DisplayLabel, FluentIcon, IconWidget,
-    StrongBodyLabel, SubtitleLabel, TableWidget, TitleLabel,
+    StrongBodyLabel, TableWidget, TitleLabel,
 )
 
+from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.atlas import atlas_count
 from scikms.kms.db import get_all_papers, get_db_stats
@@ -65,7 +66,7 @@ class StatsPage(QWidget):
         outer.setContentsMargins(24, 20, 24, 20)
         outer.setSpacing(14)
 
-        outer.addWidget(SubtitleLabel(t("kms-stats-title")))
+        outer.addWidget(PageHeader(t("kms-stats-title")))
 
         # Metric tile grid (6 tiles)
         grid = QGridLayout()
