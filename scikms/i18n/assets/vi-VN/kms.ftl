@@ -176,6 +176,9 @@ kms-stats-reading-progress = Tiến độ đọc
 kms-stats-timeline = Số bài theo năm
 kms-stats-top-tags = Tag phổ biến nhất
 kms-stats-no-data = Chưa có dữ liệu để hiển thị thống kê.
+kms-stats-empty-title = Chưa có bài báo nào
+kms-stats-empty-message = Nhập bài báo đầu tiên để xem phân bố EBM, thiết kế nghiên cứu, chuyên khoa và các phân tích khác.
+kms-stats-empty-cta = Nhập bài báo
 
 # Rename page
 kms-rename-title = Đổi tên file

@@ -13,14 +13,14 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QAbstractItemView, QGridLayout, QHBoxLayout, QHeaderView, QScrollArea,
-    QSizePolicy, QVBoxLayout, QWidget,
+    QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
-    BodyLabel, CardWidget, CaptionLabel, DisplayLabel, FluentIcon, IconWidget,
-    StrongBodyLabel, SubtitleLabel, TableWidget,
+    CardWidget, CaptionLabel, FluentIcon, IconWidget, StrongBodyLabel,
+    SubtitleLabel, TableWidget,
 )
 
-from scikms.gui.kms.shared import BoundedRow, PageHeader
+from scikms.gui.kms.shared import BoundedRow, EmptyStatePanel, PageHeader
 from scikms.i18n import t
 from scikms.kms.atlas import atlas_count
 from scikms.kms.db import get_all_papers, get_db_stats
@@ -92,6 +92,11 @@ class StatsPage(QWidget):
             grid.setColumnStretch(col, 1)
         outer.addWidget(BoundedRow(metrics_holder, max_width=1160))
 
+        # Body stack: page 0 is the distribution-tables scroll view, page 1 is
+        # a warm empty state for the zero-paper case. Tiles remain visible in
+        # both modes so the user always sees the totals.
+        self._body_stack = QStackedWidget(self)
+
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
@@ -112,7 +117,18 @@ class StatsPage(QWidget):
 
         body_layout.addStretch(1)
         scroll.setWidget(body)
-        outer.addWidget(scroll, 1)
+        self._body_stack.addWidget(scroll)
+
+        self._empty = EmptyStatePanel(
+            FluentIcon.LIBRARY,
+            t("kms-stats-empty-title"),
+            t("kms-stats-empty-message"),
+            primary_text=t("kms-stats-empty-cta"),
+            on_primary=lambda: self._main.show_page("import"),
+        )
+        self._body_stack.addWidget(self._empty)
+
+        outer.addWidget(self._body_stack, 1)
 
     def _make_table(self, headers: list[str]) -> TableWidget:
         tbl = TableWidget()
@@ -121,7 +137,10 @@ class StatsPage(QWidget):
         tbl.verticalHeader().hide()
         tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         tbl.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        tbl.setMaximumHeight(220)
+        # Tables size to their row count (set in _fill_table); the outer
+        # scroll area handles overflow of the page as a whole, so internal
+        # vertical scroll inside each table is not needed and would double up.
+        tbl.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         tbl.setBorderRadius(8)
         tbl.setBorderVisible(True)
         return tbl
@@ -149,10 +168,14 @@ class StatsPage(QWidget):
         self._tile_figures.set_value(atlas_count())
 
         if not papers:
+            # Swap in the warm empty-state panel instead of five empty tables.
+            self._body_stack.setCurrentIndex(1)
             for tbl in (self._tbl_pyramid, self._tbl_design, self._tbl_specialty,
                         self._tbl_timeline, self._tbl_tags):
                 tbl.setRowCount(0)
             return
+
+        self._body_stack.setCurrentIndex(0)
 
         ebm_counts = Counter(p.get("evidence_level") or "—" for p in papers)
         order = ["I", "II", "III", "IV", "V", "—"]
@@ -185,3 +208,8 @@ class StatsPage(QWidget):
         for r, (key, val) in enumerate(rows):
             tbl.setItem(r, 0, QTableWidgetItem(str(key)))
             tbl.setItem(r, 1, QTableWidgetItem(str(val)))
+        # Size the table to fit its rows — no internal scroll; the outer
+        # page-level scroll area handles overall overflow.
+        row_h = tbl.verticalHeader().defaultSectionSize() or 32
+        header_h = tbl.horizontalHeader().sizeHint().height() or 32
+        tbl.setFixedHeight(header_h + max(1, len(rows)) * row_h + 6)

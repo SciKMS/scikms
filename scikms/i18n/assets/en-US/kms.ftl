@@ -173,6 +173,9 @@ kms-stats-reading-progress = Reading progress
 kms-stats-timeline = Papers per year
 kms-stats-top-tags = Top tags
 kms-stats-no-data = No data to display.
+kms-stats-empty-title = No papers yet
+kms-stats-empty-message = Import your first paper to see evidence-level, study-design, specialty, and other breakdowns.
+kms-stats-empty-cta = Import papers
 
 # Rename page
 kms-rename-title = Rename files
