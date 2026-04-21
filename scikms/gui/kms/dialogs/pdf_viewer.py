@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPointF, Qt, QTimer
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QSplitter, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon, InfoBar, InfoBarPosition,
@@ -28,10 +28,11 @@ except ImportError:
 
 
 class PdfViewerDialog(QDialog):
-    def __init__(self, paper: dict, parent=None) -> None:
+    def __init__(self, paper: dict, parent=None, initial_page: int = 0) -> None:
         super().__init__(parent)
         self._paper = paper
         self._paper_id = paper["id"]
+        self._initial_page = max(0, int(initial_page or 0))
         self.setWindowTitle((paper.get("title") or t("common-untitled"))[:80])
         self.resize(1100, 760)
 
@@ -85,6 +86,14 @@ class PdfViewerDialog(QDialog):
             view.setPageMode(QPdfView.PageMode.MultiPage)
             view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
             lay.addWidget(view, 1)
+            if self._initial_page > 0:
+                # Jump after layout settles so pageNavigator knows page heights.
+                QTimer.singleShot(
+                    0,
+                    lambda: view.pageNavigator().jump(
+                        self._initial_page, QPointF(0, 0), 0,
+                    ),
+                )
             return wrap
 
         info = BodyLabel(f"<i>QtPdf not available. File:</i><br><tt>{fp}</tt>")
