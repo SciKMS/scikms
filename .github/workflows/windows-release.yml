@@ -1,12 +1,8 @@
-name: Release · Windows
+name: Build Window
 
-# Manual-only. Trigger from the Actions tab → "Release · Windows" → "Run workflow".
+# Manual-only. Trigger from the Actions tab → "Build Window" → "Run workflow".
 on:
   workflow_dispatch:
-
-
-permissions:
-  contents: write
     inputs:
       release_mode:
         description: "Where to publish the build"
@@ -22,6 +18,10 @@ permissions:
         description: "Tag for draft / release modes (e.g. v0.2.0). Ignored for artifact-only / nightly."
         required: false
         default: ""
+
+
+permissions:
+  contents: write
 
 jobs:
   build:
