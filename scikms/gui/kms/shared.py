@@ -128,6 +128,12 @@ class BoundedRow(QWidget):
     Wrap the offending row with ``BoundedRow(child)`` to keep content a
     comfortable reading width. Default cap: 1280 px (matches the app's
     default window width, ``MainWindow(1280, 820)``).
+
+    Implementation note: uses dynamic ``contentsMargins`` on resize rather
+    than ``QSpacerItem`` stretches, because Qt's stretch distribution
+    algorithm splits extra space *equally* between the child and the
+    stretches (all Expanding, equal weight), leaving the child at only
+    ``sizeHint + 1/3 of slack`` instead of growing to ``max_width``.
     """
 
     DEFAULT_MAX_WIDTH = 1280
@@ -139,17 +145,27 @@ class BoundedRow(QWidget):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
+        self._max_width = max_width
         child.setParent(self)
-        child.setMaximumWidth(max_width)
         current_v = child.sizePolicy().verticalPolicy()
         child.setSizePolicy(QSizePolicy.Policy.Expanding, current_v)
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(0)
-        lay.addStretch(1)
-        lay.addWidget(child, 1)
-        lay.addStretch(1)
+        self._lay = QHBoxLayout(self)
+        self._lay.setContentsMargins(0, 0, 0, 0)
+        self._lay.setSpacing(0)
+        self._lay.addWidget(child)
         self._child = child
+        self._apply_gutter(self.width())
+
+    def resizeEvent(self, event) -> None:  # noqa: N802  (Qt override)
+        super().resizeEvent(event)
+        self._apply_gutter(self.width())
+
+    def _apply_gutter(self, width: int) -> None:
+        if width > self._max_width:
+            gutter = (width - self._max_width) // 2
+            self._lay.setContentsMargins(gutter, 0, gutter, 0)
+        else:
+            self._lay.setContentsMargins(0, 0, 0, 0)
 
     @property
     def child(self) -> QWidget:

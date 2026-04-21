@@ -13,14 +13,14 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QAbstractItemView, QGridLayout, QHBoxLayout, QHeaderView, QScrollArea,
-    QVBoxLayout, QWidget,
+    QSizePolicy, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
     BodyLabel, CardWidget, CaptionLabel, DisplayLabel, FluentIcon, IconWidget,
-    StrongBodyLabel, TableWidget, TitleLabel,
+    StrongBodyLabel, SubtitleLabel, TableWidget,
 )
 
-from scikms.gui.kms.shared import PageHeader
+from scikms.gui.kms.shared import BoundedRow, PageHeader
 from scikms.i18n import t
 from scikms.kms.atlas import atlas_count
 from scikms.kms.db import get_all_papers, get_db_stats
@@ -36,15 +36,18 @@ class _MetricTile(CardWidget):
         super().__init__(parent)
         self.setBorderRadius(10)
         self.setFixedHeight(92)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
+        )
         lay = QHBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
         lay.setSpacing(12)
         self._icon = IconWidget(icon, self)
-        self._icon.setFixedSize(32, 32)
+        self._icon.setFixedSize(28, 28)
         lay.addWidget(self._icon)
         txt = QVBoxLayout()
         txt.setSpacing(2)
-        self._value = TitleLabel("0", self)
+        self._value = SubtitleLabel("0", self)
         self._label = CaptionLabel(label, self)
         txt.addWidget(self._value)
         txt.addWidget(self._label)
@@ -68,8 +71,12 @@ class StatsPage(QWidget):
 
         outer.addWidget(PageHeader(t("kms-stats-title")))
 
-        # Metric tile grid (6 tiles)
-        grid = QGridLayout()
+        # Metric tile grid (6 tiles). Capped at ~1160 px so tiles stay a
+        # sensible ~180 px each at 1920 px instead of stretching into
+        # banner-shaped cards with icon + number bunched on the left.
+        metrics_holder = QWidget(self)
+        grid = QGridLayout(metrics_holder)
+        grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(10)
         self._tile_papers = _MetricTile(FluentIcon.LIBRARY, t("sidebar-stats-papers"))
         self._tile_read = _MetricTile(FluentIcon.BOOK_SHELF, t("sidebar-stats-read"))
@@ -82,7 +89,8 @@ class StatsPage(QWidget):
             self._tile_starred, self._tile_pages, self._tile_figures,
         ]):
             grid.addWidget(tile, 0, col)
-        outer.addLayout(grid)
+            grid.setColumnStretch(col, 1)
+        outer.addWidget(BoundedRow(metrics_holder, max_width=1160))
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
