@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIconBase, IconWidget, PrimaryPushButton,
     StrongBodyLabel, TitleLabel,
@@ -115,3 +115,42 @@ class EmptyStatePanel(QWidget):
             outer.addLayout(btn_row)
 
         outer.addStretch(1)
+
+
+class BoundedRow(QWidget):
+    """Horizontally-centred wrapper that caps a child widget's width.
+
+    Pages otherwise stretch every card and row to the full viewport on
+    ultrawide screens, which produces banner-shaped cards (export rows),
+    tables with meters of whitespace (search), and metric tiles that each
+    span 300+ px (stats).
+
+    Wrap the offending row with ``BoundedRow(child)`` to keep content a
+    comfortable reading width. Default cap: 1280 px (matches the app's
+    default window width, ``MainWindow(1280, 820)``).
+    """
+
+    DEFAULT_MAX_WIDTH = 1280
+
+    def __init__(
+        self,
+        child: QWidget,
+        max_width: int = DEFAULT_MAX_WIDTH,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        child.setParent(self)
+        child.setMaximumWidth(max_width)
+        current_v = child.sizePolicy().verticalPolicy()
+        child.setSizePolicy(QSizePolicy.Policy.Expanding, current_v)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        lay.addStretch(1)
+        lay.addWidget(child, 1)
+        lay.addStretch(1)
+        self._child = child
+
+    @property
+    def child(self) -> QWidget:
+        return self._child
