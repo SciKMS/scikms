@@ -7,15 +7,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QFileDialog, QFormLayout, QHBoxLayout, QListWidget, QStackedWidget,
-    QVBoxLayout, QWidget,
+    QAbstractItemView, QFileDialog, QFormLayout, QHBoxLayout, QListWidget,
+    QStackedWidget, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
     BodyLabel, CardWidget, CheckBox, FluentIcon, InfoBar, InfoBarPosition,
-    LineEdit, Pivot, PlainTextEdit, PrimaryPushButton, ProgressBar, SpinBox,
-    StrongBodyLabel, SubtitleLabel, CaptionLabel,
+    LineEdit, Pivot, PlainTextEdit, PrimaryPushButton, ProgressBar, PushButton,
+    SpinBox, StrongBodyLabel, SubtitleLabel, CaptionLabel,
 )
 
 from scikms.i18n import t
@@ -100,6 +101,14 @@ class ImportPage(QWidget):
         self._btn_pick = PrimaryPushButton(FluentIcon.FOLDER_ADD, t("kms-import-pdf-pick"))
         self._btn_pick.clicked.connect(self._on_pick_pdfs)
         row.addWidget(self._btn_pick)
+        self._btn_remove = PushButton(FluentIcon.REMOVE, t("kms-import-pdf-remove"))
+        self._btn_remove.clicked.connect(self._on_remove_selected)
+        self._btn_remove.setEnabled(False)
+        row.addWidget(self._btn_remove)
+        self._btn_clear = PushButton(FluentIcon.DELETE, t("kms-import-pdf-clear"))
+        self._btn_clear.clicked.connect(self._on_clear_files)
+        self._btn_clear.setEnabled(False)
+        row.addWidget(self._btn_clear)
         self._chk_extract = CheckBox(t("kms-import-pdf-extract-images"))
         self._chk_extract.setChecked(True)
         row.addWidget(self._chk_extract)
@@ -107,6 +116,12 @@ class ImportPage(QWidget):
         lay.addLayout(row)
 
         self._lst_files = QListWidget()
+        self._lst_files.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self._lst_files.itemSelectionChanged.connect(self._sync_file_buttons)
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self._lst_files,
+                  activated=self._on_remove_selected)
+        QShortcut(QKeySequence(Qt.Key.Key_Backspace), self._lst_files,
+                  activated=self._on_remove_selected)
         lay.addWidget(self._lst_files, 1)
 
         self._btn_process = PrimaryPushButton(FluentIcon.PLAY, t("kms-import-pdf-process", count=0))
@@ -126,10 +141,28 @@ class ImportPage(QWidget):
         paths, _ = QFileDialog.getOpenFileNames(self, t("kms-import-pdf-pick"), "", "PDF (*.pdf)")
         if not paths:
             return
+        existing = {self._lst_files.item(i).text()
+                    for i in range(self._lst_files.count())}
+        for p in paths:
+            if p not in existing:
+                self._lst_files.addItem(p)
+        self._sync_file_buttons()
+
+    def _on_remove_selected(self) -> None:
+        for item in self._lst_files.selectedItems():
+            self._lst_files.takeItem(self._lst_files.row(item))
+        self._sync_file_buttons()
+
+    def _on_clear_files(self) -> None:
         self._lst_files.clear()
-        self._lst_files.addItems(paths)
-        self._btn_process.setText(t("kms-import-pdf-process", count=len(paths)))
-        self._btn_process.setEnabled(True)
+        self._sync_file_buttons()
+
+    def _sync_file_buttons(self) -> None:
+        count = self._lst_files.count()
+        self._btn_process.setText(t("kms-import-pdf-process", count=count))
+        self._btn_process.setEnabled(count > 0 and self._worker is None)
+        self._btn_clear.setEnabled(count > 0)
+        self._btn_remove.setEnabled(bool(self._lst_files.selectedItems()))
 
     def _on_process_pdfs(self) -> None:
         paths = [self._lst_files.item(i).text() for i in range(self._lst_files.count())]
@@ -162,7 +195,7 @@ class ImportPage(QWidget):
     def _on_pdf_done(self) -> None:
         self._worker = None
         self._progress.setVisible(False)
-        self._btn_process.setEnabled(True)
+        self._sync_file_buttons()
         InfoBar.success(
             title=t("kms-import-pdf-success", count=self._success),
             content=t("kms-import-pdf-failed", count=self._failed) if self._failed else "",

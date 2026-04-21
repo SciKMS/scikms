@@ -82,6 +82,7 @@ class PdfViewerDialog(QDialog):
             doc.load(fp)
             view = QPdfView(self)
             view.setDocument(doc)
+            view.setPageMode(QPdfView.PageMode.MultiPage)
             view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
             lay.addWidget(view, 1)
             return wrap
