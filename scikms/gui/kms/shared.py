@@ -5,10 +5,14 @@ Keep widgets here small, dependency-free of pages, and Fluent-consistent.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Callable, Optional
 
-from PyQt6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import CaptionLabel, TitleLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel, CaptionLabel, FluentIconBase, IconWidget, PrimaryPushButton,
+    StrongBodyLabel, TitleLabel,
+)
 
 
 class PageHeader(QWidget):
@@ -49,3 +53,65 @@ class PageHeader(QWidget):
         else:
             self._caption.setText(text)
         self._caption.setVisible(bool(text))
+
+
+class EmptyStatePanel(QWidget):
+    """Generic empty-state panel: centred icon + title + message + CTA.
+
+    Use inside cards, tables, or page bodies that may legitimately contain
+    zero rows. Replaces the "active filters hovering over a blank canvas"
+    anti-pattern: gives the user one clear explanation and one next action.
+    """
+
+    def __init__(
+        self,
+        icon: FluentIconBase,
+        title: str,
+        message: str = "",
+        primary_text: Optional[str] = None,
+        on_primary: Optional[Callable[[], None]] = None,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(24, 24, 24, 24)
+        outer.setSpacing(0)
+        outer.addStretch(1)
+
+        ic = IconWidget(icon, self)
+        ic.setFixedSize(48, 48)
+        ic_row = QHBoxLayout()
+        ic_row.addStretch(1)
+        ic_row.addWidget(ic)
+        ic_row.addStretch(1)
+        outer.addLayout(ic_row)
+
+        title_lbl = StrongBodyLabel(title, self)
+        title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        outer.addSpacing(12)
+        outer.addWidget(title_lbl)
+
+        if message:
+            msg_lbl = BodyLabel(message, self)
+            msg_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            msg_lbl.setWordWrap(True)
+            msg_lbl.setMaximumWidth(440)
+            msg_row = QHBoxLayout()
+            msg_row.addStretch(1)
+            msg_row.addWidget(msg_lbl)
+            msg_row.addStretch(1)
+            outer.addSpacing(4)
+            outer.addLayout(msg_row)
+
+        if primary_text and on_primary is not None:
+            btn = PrimaryPushButton(primary_text, self)
+            btn.clicked.connect(on_primary)
+            btn_row = QHBoxLayout()
+            btn_row.addStretch(1)
+            btn_row.addWidget(btn)
+            btn_row.addStretch(1)
+            outer.addSpacing(16)
+            outer.addLayout(btn_row)
+
+        outer.addStretch(1)
