@@ -90,6 +90,7 @@ kms-library-title = Thư viện bài báo
 kms-library-empty = Thư viện trống. Hãy nhập bài báo từ tab "Nhập tài liệu".
 kms-library-no-match = Không có bài báo nào khớp với bộ lọc.
 kms-library-page-info = { $start }–{ $end } / { $total } bài
+kms-library-count = { $count } bài báo
 kms-library-bulk-mode = Chọn hàng loạt
 kms-library-bulk-delete = Xóa { $count } bài đã chọn
 kms-library-sort = Sắp xếp

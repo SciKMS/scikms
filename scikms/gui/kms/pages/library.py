@@ -1,25 +1,38 @@
-"""Library page — paginated paper list, inline filter strip, Fluent actions."""
+"""Library page — Frontiers-style card grid with inline filter rail.
+
+Layout:
+  Row 1 — count ("N bài báo") on the left, search + sort on the right.
+  Row 2 — inline filter combos (status / starred / project / EBM / design /
+          specialty) and page-size selector.
+  Body  — scrollable 3-column grid of PaperCard widgets. Cards stretch with
+          the viewport so the grid stays responsive under window resize /
+          display zoom.
+  Footer — pagination nav.
+
+Click a card to open the PDF, right-click for contextual actions (star, edit
+notes, delete). A small star button in the card's top-right toggles starred
+without opening the paper.
+"""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QSizePolicy,
-    QVBoxLayout, QWidget,
+    QGridLayout, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
-    CardWidget, CheckBox, ComboBox, FluentIcon, InfoBar, InfoBarPosition,
-    MessageBox, PrimaryPushButton, PushButton, RoundMenu, SearchLineEdit,
-    SpinBox, SubtitleLabel, TableWidget, TransparentPushButton,
-    TransparentToolButton, CaptionLabel,
+    BodyLabel, CaptionLabel, CardWidget, CheckBox, ComboBox, FluentIcon,
+    InfoBar, InfoBarPosition, MessageBox, RoundMenu, SearchLineEdit, SpinBox,
+    StrongBodyLabel, SubtitleLabel, TransparentPushButton,
+    TransparentToolButton,
 )
 
 from scikms.i18n import t
 from scikms.kms.config import (
-    CLINICAL_SPECIALTIES, EBM_LEVELS, SORT_OPTIONS, STUDY_DESIGN_KEYWORDS,
+    CLINICAL_SPECIALTIES, SORT_OPTIONS, STUDY_DESIGN_KEYWORDS,
 )
 from scikms.kms.db import (
     delete_paper, get_all_papers, get_all_projects, get_paper_by_id,
@@ -31,8 +44,178 @@ if TYPE_CHECKING:
 
 
 _ALL = "(All)"
+_GRID_COLS = 3
+_CARD_MIN_W = 240
+_TITLE_MAX_CHARS = 120
+_ABSTRACT_MAX_CHARS = 200
+
+_STATUS_STYLE = {
+    "unread":  ("#d1d5db", "#4b5563"),   # grey
+    "reading": ("#fed7aa", "#c2410c"),   # amber
+    "read":    ("#bbf7d0", "#166534"),   # green
+}
 
 
+# ---------------------------------------------------------------------------
+# PaperCard — one paper rendered as a Frontiers-style card.
+# ---------------------------------------------------------------------------
+def _chip(text: str, fg: str = "#4338CA", bg: str = "rgba(67,56,202,0.12)") -> CaptionLabel:
+    lbl = CaptionLabel(text)
+    lbl.setStyleSheet(
+        f"padding: 2px 8px; border-radius: 10px; "
+        f"background: {bg}; color: {fg};"
+    )
+    return lbl
+
+
+def _status_chip(status: str) -> CaptionLabel:
+    bg, fg = _STATUS_STYLE.get(status, _STATUS_STYLE["unread"])
+    label_key = f"kms-library-paper-status-{status}" if status in {
+        "unread", "reading", "read"} else "kms-library-paper-status-unread"
+    return _chip(t(label_key), fg=fg, bg=bg)
+
+
+class PaperCard(CardWidget):
+    open_requested = pyqtSignal(int)
+    star_toggled = pyqtSignal(int)
+    menu_requested = pyqtSignal(int, QPoint)
+
+    def __init__(self, paper: dict, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._paper_id: int = int(paper["id"])
+        self.setBorderRadius(10)
+        self.setMinimumWidth(_CARD_MIN_W)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(8)
+
+        # --- Title row with star + menu buttons in the corner -----------
+        top_row = QHBoxLayout()
+        top_row.setSpacing(6)
+        raw_title = paper.get("title") or t("common-untitled")
+        title_text = raw_title if len(raw_title) <= _TITLE_MAX_CHARS \
+            else raw_title[: _TITLE_MAX_CHARS - 1].rstrip() + "…"
+        title = StrongBodyLabel(title_text)
+        title.setWordWrap(True)
+        # Reserve 2 lines so short and long titles share the same baseline
+        # and rows stay aligned regardless of title length.
+        title.setMinimumHeight(44)
+        title.setMaximumHeight(48)
+        title.setToolTip(raw_title)
+        title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        top_row.addWidget(title, 1)
+
+        starred_now = bool(paper.get("starred"))
+        self._btn_star = TransparentPushButton("★" if starred_now else "☆")
+        self._btn_star.setStyleSheet(
+            "font-size: 16px; padding: 0 6px;"
+            + (" color: #f59e0b;" if starred_now else "")
+        )
+        self._btn_star.setToolTip(t(
+            "kms-library-paper-unstar" if starred_now else "kms-library-paper-star"
+        ))
+        self._btn_star.clicked.connect(
+            lambda: self.star_toggled.emit(self._paper_id)
+        )
+        top_row.addWidget(self._btn_star, 0, Qt.AlignmentFlag.AlignTop)
+
+        self._btn_menu = TransparentToolButton(FluentIcon.MORE)
+        self._btn_menu.clicked.connect(self._emit_menu)
+        top_row.addWidget(self._btn_menu, 0, Qt.AlignmentFlag.AlignTop)
+        lay.addLayout(top_row)
+
+        # --- Chip row: EBM + study design -------------------------------
+        chips = QHBoxLayout()
+        chips.setSpacing(4)
+        ev = paper.get("evidence_level")
+        if ev:
+            chips.addWidget(_chip(f"EBM {ev}"))
+        sd = paper.get("study_design")
+        if sd:
+            chips.addWidget(_chip(sd, fg="#0f766e", bg="rgba(20,184,166,0.14)"))
+        chips.addStretch(1)
+        if chips.count() > 1:  # has at least one chip + the stretch
+            lay.addLayout(chips)
+
+        # --- Authors (muted) --------------------------------------------
+        authors = (paper.get("authors") or "").strip()
+        if authors:
+            # Authors: split on ";" then join with middle-dot for Frontiers feel.
+            parts = [a.strip() for a in authors.split(";") if a.strip()]
+            shown = " · ".join(parts[:3])
+            if len(parts) > 3:
+                shown += f"  (+{len(parts) - 3})"
+            lbl = CaptionLabel(shown)
+            lbl.setWordWrap(True)
+            lay.addWidget(lbl)
+
+        # --- Abstract snippet -------------------------------------------
+        abstract = (paper.get("abstract") or "").strip()
+        if abstract:
+            shown = (abstract[: _ABSTRACT_MAX_CHARS - 1].rstrip() + "…") \
+                if len(abstract) > _ABSTRACT_MAX_CHARS else abstract
+            snip = CaptionLabel(shown)
+            snip.setWordWrap(True)
+            snip.setStyleSheet("opacity: 0.72;")
+            # ~3 lines so all cards share a consistent body block and the row
+            # heights in the grid stay even across short/long abstracts.
+            snip.setMinimumHeight(54)
+            snip.setMaximumHeight(58)
+            snip.setToolTip(abstract[:600])
+            snip.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
+            lay.addWidget(snip)
+
+        # --- Meta row: year · journal | specialty -----------------------
+        year = paper.get("year") or "?"
+        journal = (paper.get("journal") or "").strip()
+        specialty = (paper.get("clinical_specialty") or "").strip()
+        meta_parts = [str(year)]
+        if journal:
+            meta_parts.append(journal)
+        meta = " · ".join(meta_parts)
+        if specialty:
+            meta += f"  |  {specialty}"
+        lay.addWidget(CaptionLabel(meta))
+
+        # --- Bottom stats row -------------------------------------------
+        stats = QHBoxLayout()
+        stats.setSpacing(6)
+        stats.addWidget(_status_chip(paper.get("status") or "unread"))
+        pages = paper.get("pages") or 0
+        if pages:
+            stats.addWidget(CaptionLabel(f"📄 {pages}"))
+        notes = (paper.get("notes") or "").strip()
+        if notes:
+            stats.addWidget(CaptionLabel("📝"))
+        stats.addStretch(1)
+        lay.addLayout(stats)
+
+    # -- Event handling --------------------------------------------------
+    def _emit_menu(self) -> None:
+        self.menu_requested.emit(
+            self._paper_id,
+            self._btn_menu.mapToGlobal(self._btn_menu.rect().bottomLeft()),
+        )
+
+    def mouseReleaseEvent(self, e) -> None:
+        super().mouseReleaseEvent(e)
+        if e.button() == Qt.MouseButton.LeftButton:
+            self.open_requested.emit(self._paper_id)
+
+    def contextMenuEvent(self, e) -> None:
+        self.menu_requested.emit(self._paper_id, e.globalPos())
+
+
+# ---------------------------------------------------------------------------
+# LibraryPage
+# ---------------------------------------------------------------------------
 class LibraryPage(QWidget):
     def __init__(self, main_window: "MainWindow") -> None:
         super().__init__()
@@ -47,30 +230,35 @@ class LibraryPage(QWidget):
     def _build(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
         layout.addWidget(SubtitleLabel(t("kms-library-title")))
-
         layout.addWidget(self._build_filter_card())
 
-        self._table = TableWidget(self)
-        self._table.setColumnCount(7)
-        self._table.setHorizontalHeaderLabels([
-            "★", t("kms-import-manual-title"), t("kms-import-manual-authors"),
-            t("kms-import-manual-year"), "EBM", t("sidebar-filter-status"),
-            t("sidebar-filter-specialty"),
-        ])
-        self._table.verticalHeader().hide()
-        self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(self._on_context_menu)
-        self._table.cellDoubleClicked.connect(self._on_open_paper)
-        self._table.setBorderRadius(8)
-        self._table.setBorderVisible(True)
-        layout.addWidget(self._table, 1)
+        # Scroll area hosting a fixed-width 3-column grid. Columns share equal
+        # stretch so cards grow/shrink proportionally with the viewport — this
+        # is what keeps the layout responsive under window resize / OS zoom.
+        self._scroll = QScrollArea(self)
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._grid_host = QWidget()
+        self._grid = QGridLayout(self._grid_host)
+        self._grid.setContentsMargins(0, 0, 0, 0)
+        self._grid.setHorizontalSpacing(14)
+        self._grid.setVerticalSpacing(14)
+        for c in range(_GRID_COLS):
+            self._grid.setColumnStretch(c, 1)
+        self._scroll.setWidget(self._grid_host)
+        layout.addWidget(self._scroll, 1)
 
+        # Empty-state label sits inside the scroll area when no cards exist.
+        self._lbl_empty = BodyLabel("", self)
+        self._lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._lbl_empty.setStyleSheet("opacity: 0.6; padding: 48px;")
+        self._lbl_empty.hide()
+        layout.addWidget(self._lbl_empty)
+
+        # Pagination footer
         nav = QHBoxLayout()
         self._lbl_info = CaptionLabel("")
         nav.addWidget(self._lbl_info)
@@ -84,31 +272,19 @@ class LibraryPage(QWidget):
         nav.addWidget(self._btn_next)
         layout.addLayout(nav)
 
-        actions = QHBoxLayout()
-        self._btn_open = PrimaryPushButton(FluentIcon.VIEW, t("kms-library-paper-open"))
-        self._btn_open.clicked.connect(self._open_selected)
-        actions.addWidget(self._btn_open)
-        self._btn_star = PushButton(FluentIcon.HEART, t("kms-library-paper-star"))
-        self._btn_star.clicked.connect(self._on_toggle_star)
-        actions.addWidget(self._btn_star)
-        self._btn_notes = PushButton(FluentIcon.EDIT, t("kms-library-paper-edit-notes"))
-        self._btn_notes.clicked.connect(self._on_edit_notes)
-        actions.addWidget(self._btn_notes)
-        self._btn_delete = PushButton(FluentIcon.DELETE, t("kms-library-paper-delete"))
-        self._btn_delete.clicked.connect(self._on_delete_paper)
-        actions.addWidget(self._btn_delete)
-        actions.addStretch(1)
-        layout.addLayout(actions)
-
     def _build_filter_card(self) -> CardWidget:
         card = CardWidget(self)
         card.setBorderRadius(8)
         v = QVBoxLayout(card)
-        v.setContentsMargins(12, 10, 12, 10)
-        v.setSpacing(8)
+        v.setContentsMargins(14, 10, 14, 10)
+        v.setSpacing(10)
 
-        # Top row: search + sort + page-size
+        # Row 1 — count + search + sort
         top = QHBoxLayout()
+        top.setSpacing(10)
+        self._lbl_count = StrongBodyLabel("")
+        top.addWidget(self._lbl_count)
+        top.addSpacing(12)
         self._ed_filter = SearchLineEdit(self)
         self._ed_filter.setPlaceholderText(t("common-search"))
         self._ed_filter.textChanged.connect(self._apply_and_render)
@@ -119,17 +295,11 @@ class LibraryPage(QWidget):
         self._cmb_sort.addItems(SORT_OPTIONS)
         self._cmb_sort.currentIndexChanged.connect(self.refresh)
         top.addWidget(self._cmb_sort)
-
-        top.addWidget(CaptionLabel(t("kms-library-page-size") + ":"))
-        self._spn_size = SpinBox(self)
-        self._spn_size.setRange(5, 200)
-        self._spn_size.setValue(15)
-        self._spn_size.valueChanged.connect(self._on_page_size)
-        top.addWidget(self._spn_size)
         v.addLayout(top)
 
-        # Bottom row: filter combos
+        # Row 2 — all inline filters
         bot = QHBoxLayout()
+        bot.setSpacing(8)
 
         self._cmb_status = ComboBox(self)
         self._cmb_status.addItems([
@@ -176,7 +346,14 @@ class LibraryPage(QWidget):
         bot.addWidget(self._cmb_specialty)
 
         bot.addStretch(1)
+        bot.addWidget(CaptionLabel(t("kms-library-page-size") + ":"))
+        self._spn_size = SpinBox(self)
+        self._spn_size.setRange(6, 200)
+        self._spn_size.setValue(self._page_size)
+        self._spn_size.valueChanged.connect(self._on_page_size)
+        bot.addWidget(self._spn_size)
         v.addLayout(bot)
+
         return card
 
     # ------------------------------------------------------------------
@@ -223,47 +400,54 @@ class LibraryPage(QWidget):
             ]
 
         self._filtered = rows
+        self._lbl_count.setText(t("kms-library-count", count=len(rows)))
         self._page = max(0, min(self._page, max(0, (len(rows) - 1) // self._page_size)))
         self._render_page()
 
     def _render_page(self) -> None:
+        self._clear_grid()
         total = len(self._filtered)
-        start = self._page * self._page_size
-        end = min(start + self._page_size, total)
-        slice_ = self._filtered[start:end]
 
         if total == 0:
-            self._table.setRowCount(0)
-            self._lbl_info.setText(
-                t("kms-library-empty") if not get_papers_count() else t("kms-library-no-match")
+            self._lbl_empty.setText(
+                t("kms-library-empty") if not get_papers_count()
+                else t("kms-library-no-match")
             )
+            self._lbl_empty.show()
+            self._scroll.hide()
+            self._lbl_info.setText("")
             self._btn_prev.setEnabled(False)
             self._btn_next.setEnabled(False)
             return
 
-        self._table.setRowCount(len(slice_))
-        from PyQt6.QtWidgets import QTableWidgetItem
-        for r, paper in enumerate(slice_):
-            star = "★" if paper.get("starred") else "☆"
-            cells = [
-                star,
-                paper.get("title") or t("common-untitled"),
-                paper.get("authors") or "",
-                str(paper.get("year") or ""),
-                paper.get("evidence_level") or "",
-                paper.get("status") or "",
-                paper.get("clinical_specialty") or "",
-            ]
-            for c, val in enumerate(cells):
-                item = QTableWidgetItem(val)
-                item.setData(Qt.ItemDataRole.UserRole, paper["id"])
-                self._table.setItem(r, c, item)
+        self._lbl_empty.hide()
+        self._scroll.show()
+
+        start = self._page * self._page_size
+        end = min(start + self._page_size, total)
+        for i, paper in enumerate(self._filtered[start:end]):
+            card = PaperCard(paper, self._grid_host)
+            card.open_requested.connect(self._open_paper)
+            card.star_toggled.connect(self._on_star_toggled)
+            card.menu_requested.connect(self._on_card_menu)
+            row, col = divmod(i, _GRID_COLS)
+            self._grid.addWidget(card, row, col)
 
         self._lbl_info.setText(
             t("kms-library-page-info", start=start + 1, end=end, total=total)
         )
         self._btn_prev.setEnabled(self._page > 0)
         self._btn_next.setEnabled(end < total)
+
+    def _clear_grid(self) -> None:
+        while self._grid.count():
+            item = self._grid.takeAt(0)
+            if item is None:
+                break
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
 
     # ------------------------------------------------------------------
     def _on_prev(self) -> None:
@@ -281,29 +465,7 @@ class LibraryPage(QWidget):
         self._page = 0
         self._render_page()
 
-    def _selected_id(self) -> int | None:
-        row = self._table.currentRow()
-        if row < 0:
-            return None
-        item = self._table.item(row, 0)
-        if not item:
-            return None
-        return int(item.data(Qt.ItemDataRole.UserRole))
-
-    def _open_selected(self) -> None:
-        pid = self._selected_id()
-        if pid is None:
-            return
-        self._open_paper(pid)
-
-    def _on_open_paper(self, row: int, _col: int) -> None:
-        if row < 0:
-            return
-        item = self._table.item(row, 0)
-        if not item:
-            return
-        self._open_paper(int(item.data(Qt.ItemDataRole.UserRole)))
-
+    # -- Card actions ---------------------------------------------------
     def _open_paper(self, pid: int) -> None:
         paper = get_paper_by_id(pid)
         if not paper:
@@ -311,28 +473,19 @@ class LibraryPage(QWidget):
         from scikms.gui.kms.dialogs.pdf_viewer import PdfViewerDialog
         PdfViewerDialog(paper, self).exec()
 
-    def _on_toggle_star(self) -> None:
-        pid = self._selected_id()
-        if pid is None:
-            return
+    def _on_star_toggled(self, pid: int) -> None:
         paper = get_paper_by_id(pid)
         if not paper:
             return
         update_paper(pid, {"starred": 0 if paper.get("starred") else 1})
         self.refresh()
 
-    def _on_edit_notes(self) -> None:
-        pid = self._selected_id()
-        if pid is None:
-            return
+    def _on_edit_notes(self, pid: int) -> None:
         from scikms.gui.kms.dialogs.note_editor import NoteEditorDialog
         if NoteEditorDialog(pid, self).exec():
             self.refresh()
 
-    def _on_delete_paper(self) -> None:
-        pid = self._selected_id()
-        if pid is None:
-            return
+    def _on_delete_paper(self, pid: int) -> None:
         box = MessageBox(t("common-confirm"), t("confirm-delete-paper"), self)
         if box.exec():
             delete_paper(pid)
@@ -342,22 +495,19 @@ class LibraryPage(QWidget):
                 parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000,
             )
 
-    def _on_context_menu(self, pos) -> None:
-        pid = self._selected_id()
-        if pid is None:
-            return
-        menu = RoundMenu(parent=self._table)
+    def _on_card_menu(self, pid: int, global_pos: QPoint) -> None:
+        menu = RoundMenu(parent=self)
         act_open = QAction(t("kms-library-paper-open"))
-        act_open.triggered.connect(self._open_selected)
+        act_open.triggered.connect(lambda _=False, p=pid: self._open_paper(p))
         menu.addAction(act_open)
         act_star = QAction(t("kms-library-paper-star"))
-        act_star.triggered.connect(self._on_toggle_star)
+        act_star.triggered.connect(lambda _=False, p=pid: self._on_star_toggled(p))
         menu.addAction(act_star)
         act_notes = QAction(t("kms-library-paper-edit-notes"))
-        act_notes.triggered.connect(self._on_edit_notes)
+        act_notes.triggered.connect(lambda _=False, p=pid: self._on_edit_notes(p))
         menu.addAction(act_notes)
         menu.addSeparator()
         act_delete = QAction(t("kms-library-paper-delete"))
-        act_delete.triggered.connect(self._on_delete_paper)
+        act_delete.triggered.connect(lambda _=False, p=pid: self._on_delete_paper(p))
         menu.addAction(act_delete)
-        menu.exec(self._table.viewport().mapToGlobal(pos))
+        menu.exec(global_pos)

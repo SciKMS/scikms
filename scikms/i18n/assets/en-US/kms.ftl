@@ -87,6 +87,7 @@ kms-library-title = Paper Library
 kms-library-empty = Library is empty. Import papers from the "Import" tab.
 kms-library-no-match = No papers match the current filters.
 kms-library-page-info = { $start }–{ $end } of { $total } papers
+kms-library-count = { $count } papers
 kms-library-bulk-mode = Bulk select
 kms-library-bulk-delete = Delete { $count } selected
 kms-library-sort = Sort by
