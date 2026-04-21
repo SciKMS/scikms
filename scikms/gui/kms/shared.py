@@ -1,6 +1,15 @@
-"""Shared widgets used by multiple KMS pages.
+"""Shared widgets and layout constants used by multiple KMS pages.
 
 Keep widgets here small, dependency-free of pages, and Fluent-consistent.
+
+``PAGE_MARGINS`` and ``PAGE_SPACING`` are the canonical outer-layout
+values for a KMS page. Every page's root ``QVBoxLayout`` should call::
+
+    layout.setContentsMargins(*PAGE_MARGINS)
+    layout.setSpacing(PAGE_SPACING)
+
+so pages align to the same vertical rhythm when the user switches
+between them in the Fluent navigation.
 """
 
 from __future__ import annotations
@@ -13,6 +22,10 @@ from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIconBase, IconWidget, PrimaryPushButton,
     StrongBodyLabel, TitleLabel,
 )
+
+
+PAGE_MARGINS: tuple[int, int, int, int] = (24, 20, 24, 20)
+PAGE_SPACING: int = 12
 
 
 class PageHeader(QWidget):

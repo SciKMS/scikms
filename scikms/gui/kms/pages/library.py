@@ -230,7 +230,7 @@ class LibraryPage(QWidget):
     def _build(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(10)
+        layout.setSpacing(12)
 
         layout.addWidget(PageHeader(t("kms-library-title")))
         layout.addWidget(self._build_filter_card())

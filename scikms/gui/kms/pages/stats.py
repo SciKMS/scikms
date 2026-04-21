@@ -68,7 +68,7 @@ class StatsPage(QWidget):
     def _build(self) -> None:
         outer = QVBoxLayout(self)
         outer.setContentsMargins(24, 20, 24, 20)
-        outer.setSpacing(14)
+        outer.setSpacing(12)
 
         outer.addWidget(PageHeader(t("kms-stats-title")))
 
