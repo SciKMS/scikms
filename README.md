@@ -9,7 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SciKMS/scikms/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/YOUR_ORG/scikms/build.yml?branch=main&label=tests" alt="tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="license"></a>
 </p>
 
@@ -19,7 +18,7 @@
 
 SciKMS is a **local, offline-first library** for your personal collection of medical research papers. Import PDFs by drag-and-drop, DOI lookup, or PubMed search. The app auto-classifies each paper by evidence level (EBM I–V), study design, and clinical specialty. It extracts figures from the PDF into a browsable atlas, indexes everything with SQLite FTS5 full-text search, and exports to Zotero / EndNote / LaTeX / Excel.
 
-No account. No cloud. Built by doctor 
+No account. No cloud. Built by doctors. Use for doctors 
 
 
 ## Install
