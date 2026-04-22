@@ -87,7 +87,6 @@ ebm-pyramid-title = Tháp bằng chứng
 
 # Library page
 kms-library-title = Thư viện bài báo
-kms-library-empty = Thư viện trống. Hãy nhập bài báo từ tab "Nhập tài liệu".
 kms-library-empty-title = Chưa có bài báo nào
 kms-library-empty-message = Nhập bài báo đầu tiên để bắt đầu xây dựng thư viện của bạn.
 kms-library-empty-cta = Nhập bài báo
@@ -150,24 +149,16 @@ kms-atlas-title = Atlas hình ảnh
 kms-atlas-empty = Chưa có hình. Hãy nhập PDF với tùy chọn "Tự động trích xuất hình ảnh".
 kms-atlas-summary-figures = Hình
 kms-atlas-summary-papers = Bài báo
-kms-atlas-summary-high-conf = Độ tin cậy cao
 kms-atlas-summary-top-type = Loại hình phổ biến
 kms-atlas-filter-type = Loại hình
 kms-atlas-filter-domain = Lĩnh vực
-kms-atlas-filter-confidence = Độ tin cậy
 kms-atlas-filter-paper = Bài báo
 kms-atlas-filter-reset = Đặt lại bộ lọc
 kms-atlas-paper-all = Tất cả bài báo
-kms-atlas-detail-empty = Chọn một hình để xem chi tiết
 kms-atlas-open-paper = Mở bài báo tại trang này
 kms-atlas-search-prompt = Tìm trong chú thích, ngữ cảnh, ghi chú...
-kms-atlas-detail-caption = Chú thích
-kms-atlas-detail-context = Văn bản trang gốc
 kms-atlas-detail-notes = Ghi chú cá nhân
 kms-atlas-delete-figure = Xóa hình này khỏi atlas
-kms-atlas-confidence-high = Cao
-kms-atlas-confidence-medium = Trung bình
-kms-atlas-confidence-low = Thấp
 
 # Stats page
 kms-stats-title = Tổng quan & Phân tích

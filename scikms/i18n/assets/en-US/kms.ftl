@@ -84,7 +84,6 @@ ebm-pyramid-title = Evidence Pyramid
 
 # Library page
 kms-library-title = Paper Library
-kms-library-empty = Library is empty. Import papers from the "Import" tab.
 kms-library-empty-title = No papers yet
 kms-library-empty-message = Import your first paper to start building your library.
 kms-library-empty-cta = Import papers
@@ -147,24 +146,16 @@ kms-atlas-title = Figure Atlas
 kms-atlas-empty = No figures yet. Import PDFs with "Auto-extract figures" enabled.
 kms-atlas-summary-figures = Figures
 kms-atlas-summary-papers = Papers
-kms-atlas-summary-high-conf = High-confidence
 kms-atlas-summary-top-type = Top type
 kms-atlas-filter-type = Type
 kms-atlas-filter-domain = Domain
-kms-atlas-filter-confidence = Confidence
 kms-atlas-filter-paper = Paper
 kms-atlas-filter-reset = Reset
 kms-atlas-paper-all = All papers
-kms-atlas-detail-empty = Select a figure to see details
 kms-atlas-open-paper = Open paper at page
 kms-atlas-search-prompt = Search captions, context, notes, figure numbers...
-kms-atlas-detail-caption = Caption
-kms-atlas-detail-context = Extracted page text
 kms-atlas-detail-notes = Personal notes
 kms-atlas-delete-figure = Delete this figure from atlas
-kms-atlas-confidence-high = High
-kms-atlas-confidence-medium = Medium
-kms-atlas-confidence-low = Low
 
 # Stats page
 kms-stats-title = Overview & Analytics
