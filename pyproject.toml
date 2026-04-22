@@ -67,8 +67,6 @@ exclude = ["tests*"]
     "gui/assets/icons/*.png",
     "gui/assets/icons/*.ico",
     "gui/assets/icons/*.icns",
-    "gui/assets/themes/*.qss",
-    "gui/assets/themes/*.colors",
     "i18n/assets/*/*.ftl",
 ]
 

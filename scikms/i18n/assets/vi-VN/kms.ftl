@@ -88,6 +88,9 @@ ebm-pyramid-title = Tháp bằng chứng
 # Library page
 kms-library-title = Thư viện bài báo
 kms-library-empty = Thư viện trống. Hãy nhập bài báo từ tab "Nhập tài liệu".
+kms-library-empty-title = Chưa có bài báo nào
+kms-library-empty-message = Nhập bài báo đầu tiên để bắt đầu xây dựng thư viện của bạn.
+kms-library-empty-cta = Nhập bài báo
 kms-library-no-match = Không có bài báo nào khớp với bộ lọc.
 kms-library-page-info = { $start }–{ $end } / { $total } bài
 kms-library-count = { $count } bài báo

@@ -85,6 +85,9 @@ ebm-pyramid-title = Evidence Pyramid
 # Library page
 kms-library-title = Paper Library
 kms-library-empty = Library is empty. Import papers from the "Import" tab.
+kms-library-empty-title = No papers yet
+kms-library-empty-message = Import your first paper to start building your library.
+kms-library-empty-cta = Import papers
 kms-library-no-match = No papers match the current filters.
 kms-library-page-info = { $start }–{ $end } of { $total } papers
 kms-library-count = { $count } papers

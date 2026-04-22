@@ -29,7 +29,7 @@ from qfluentwidgets import (
     StrongBodyLabel, TransparentPushButton, TransparentToolButton,
 )
 
-from scikms.gui.kms.shared import PageHeader, dim
+from scikms.gui.kms.shared import EmptyStatePanel, PageHeader, dim
 from scikms.i18n import t
 from scikms.kms.config import (
     CLINICAL_SPECIALTIES, SORT_OPTIONS, STUDY_DESIGN_KEYWORDS,
@@ -251,15 +251,25 @@ class LibraryPage(QWidget):
         self._scroll.setWidget(self._grid_host)
         layout.addWidget(self._scroll, 1)
 
-        # Empty-state label sits inside the scroll area when no cards exist.
-        self._lbl_empty = BodyLabel("", self)
-        self._lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # Padding via stylesheet (supported); opacity via QGraphicsOpacityEffect
-        # (Qt stylesheets silently ignore CSS `opacity`).
-        self._lbl_empty.setStyleSheet("padding: 48px;")
-        dim(self._lbl_empty, 0.6)
-        self._lbl_empty.hide()
-        layout.addWidget(self._lbl_empty)
+        # Two empty states: a warm EmptyStatePanel with CTA when the library
+        # is genuinely empty, and a quieter dimmed label when the user simply
+        # has no filter matches. Matches the Stats page treatment.
+        self._empty_db = EmptyStatePanel(
+            FluentIcon.LIBRARY,
+            t("kms-library-empty-title"),
+            t("kms-library-empty-message"),
+            primary_text=t("kms-library-empty-cta"),
+            on_primary=lambda: self._main.show_page("import"),
+        )
+        self._empty_db.hide()
+        layout.addWidget(self._empty_db)
+
+        self._lbl_no_match = BodyLabel(t("kms-library-no-match"), self)
+        self._lbl_no_match.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._lbl_no_match.setStyleSheet("padding: 48px;")
+        dim(self._lbl_no_match, 0.6)
+        self._lbl_no_match.hide()
+        layout.addWidget(self._lbl_no_match)
 
         # Pagination footer
         nav = QHBoxLayout()
@@ -412,18 +422,20 @@ class LibraryPage(QWidget):
         total = len(self._filtered)
 
         if total == 0:
-            self._lbl_empty.setText(
-                t("kms-library-empty") if not get_papers_count()
-                else t("kms-library-no-match")
-            )
-            self._lbl_empty.show()
             self._scroll.hide()
+            if not get_papers_count():
+                self._empty_db.show()
+                self._lbl_no_match.hide()
+            else:
+                self._empty_db.hide()
+                self._lbl_no_match.show()
             self._lbl_info.setText("")
             self._btn_prev.setEnabled(False)
             self._btn_next.setEnabled(False)
             return
 
-        self._lbl_empty.hide()
+        self._empty_db.hide()
+        self._lbl_no_match.hide()
         self._scroll.show()
 
         start = self._page * self._page_size
