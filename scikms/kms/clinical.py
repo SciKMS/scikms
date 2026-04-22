@@ -98,19 +98,6 @@ def parse_pico_from_abstract(abstract: str) -> dict[str, str]:
     return pico
 
 
-ROB_DOMAINS: list[str] = [
-    "Random sequence generation",
-    "Allocation concealment",
-    "Blinding of participants",
-    "Blinding of outcome assessment",
-    "Incomplete outcome data",
-    "Selective reporting",
-    "Other bias",
-]
-ROB_VALUES = ["Low", "High", "Unclear"]
-ROB_ICONS = {"Low": "✅", "High": "❌", "Unclear": "⚠️"}
-
-
 def generate_citation(paper: dict, fmt: str = "vancouver") -> str:
     raw = paper.get("authors") or ""
     alist = [a.strip() for a in raw.split(";") if a.strip()]

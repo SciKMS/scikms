@@ -161,16 +161,6 @@ def get_all_projects() -> list[str]:
         return [r[0] for r in rows]
 
 
-def get_papers_page(order: str = "Recently added", page: int = 0, page_size: int = 15) -> list[dict]:
-    sql_order = _ORDER_MAP.get(order, "added_at DESC")
-    with db_conn() as conn:
-        rows = conn.execute(
-            f"SELECT {_COLS} FROM papers p ORDER BY {sql_order} LIMIT ? OFFSET ?",
-            (page_size, page * page_size),
-        ).fetchall()
-        return [dict(r) for r in rows]
-
-
 def get_all_papers(order: str = "Recently added") -> list[dict]:
     sql_order = _ORDER_MAP.get(order, "added_at DESC")
     with db_conn() as conn:
@@ -299,18 +289,6 @@ def delete_paper(paper_id: int) -> None:
         conn.execute("DELETE FROM papers WHERE id=?", (paper_id,))
 
 
-def delete_all_papers() -> None:
-    for p in get_all_papers():
-        fp = p.get("file_path", "")
-        if fp and os.path.exists(fp):
-            try:
-                os.remove(fp)
-            except OSError:
-                pass
-    with db_conn() as conn:
-        conn.execute("DELETE FROM papers")
-
-
 def check_duplicate(md5: str, doi: str, title: str) -> dict | None:
     with db_conn() as conn:
         if md5:
@@ -366,7 +344,7 @@ def get_db_stats() -> dict:
     }
 
 
-def read_config() -> dict:
+def _read_config() -> dict:
     if _kms.CONFIG_PATH.exists():
         try:
             return json.loads(_kms.CONFIG_PATH.read_text(encoding="utf-8"))
@@ -375,17 +353,17 @@ def read_config() -> dict:
     return {}
 
 
-def save_config(cfg: dict) -> None:
+def _save_config(cfg: dict) -> None:
     _kms.CONFIG_PATH.write_text(
         json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
 
 def get_tag_dict() -> list[str]:
-    return read_config().get("custom_tag_dict") or DEFAULT_TAG_DICT
+    return _read_config().get("custom_tag_dict") or DEFAULT_TAG_DICT
 
 
 def save_tag_dict(terms: list[str]) -> None:
-    cfg = read_config()
+    cfg = _read_config()
     cfg["custom_tag_dict"] = terms
-    save_config(cfg)
+    _save_config(cfg)

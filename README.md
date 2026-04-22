@@ -47,14 +47,6 @@ make bundle-mac    # → dist/SciKMS.app
 make bundle-win    # → dist\SciKMS\SciKMS.exe  (Windows host)
 ```
 
-## Roadmap
-
-- [ ] TBD
-- [ ] TBD
-- [ ] TBD
-- [ ] TBD
-- [ ] TBD
-
 ## License
 
 **GPL-3.0-or-later.** See [LICENSE](LICENSE) for the full text.
