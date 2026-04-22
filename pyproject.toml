@@ -23,28 +23,20 @@ classifiers = [
 ]
 dependencies = [
     "PyQt6",
+    "pyqt6-fluent-widgets[full]>=1.7",
     "fluent-runtime>=0.4.0",
     "langcodes>=3.5.1",
-    "qasync",
     "requests",
-    "janus",
     "pymupdf>=1.23",
     "pandas>=2.0",
+    "pyarrow>=14.0",
     "pillow>=10.0",
     "openpyxl>=3.1",
-    "pyarrow>=14.0",
-    "pyqt6-fluent-widgets[full]>=1.7",
 ]
-
-[project.optional-dependencies]
-webengine = ["PyQt6-WebEngine"]
-jsonrpc = ["json-rpc"]
-ai = ["langchain[openai]"]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0",
-    "pytest-asyncio",
     "pytest-qt",
     "pytest-mock",
     "pytest-cov",
@@ -70,9 +62,6 @@ exclude = ["tests*"]
     "i18n/assets/*/*.ftl",
 ]
 
-[tool.ruff.lint.pycodestyle]
-max-line-length = 89
-
 [tool.yapf]
 column_limit = 89
 based_on_style = "pep8"
@@ -87,7 +76,6 @@ addopts = [
     "--cov-report=",
     "--cov=scikms",
 ]
-asyncio_mode = "auto"
 
 [tool.flake8]
 max-line-length = 89

@@ -1,40 +1,32 @@
-# -*- coding: utf-8 -*-
+"""Platform-specific filesystem paths.
+
+Only two symbols leak outside this module today:
+- ``DATA_DIR``: consumed by :mod:`scikms.kms` to place the SQLite DB, PDF
+  storage and figure atlas under a stable per-user location.
+- ``LOG_FILE``: consumed by :mod:`scikms` for file-mode logger config.
+
+The rest (cache / state / themes / plugins / rc-file) came from FeelUOwn
+upstream and have no runtime path into SciKMS today. They can be reintroduced
+the first time a feature actually needs them.
+"""
 
 import os
 import sys
 
-USER_HOME = os.environ.get('SCIKMS_USER_HOME', os.path.expanduser('~'))
+
+USER_HOME = os.environ.get("SCIKMS_USER_HOME", os.path.expanduser("~"))
 
 
-if sys.platform == 'linux':
-    CONFIG_DIR = os.environ.get(
-        'XDG_CONFIG_HOME', os.path.join(USER_HOME, '.config'))
-    DATA_DIR = os.environ.get(
-        'XDG_DATA_HOME', os.path.join(USER_HOME, '.local', 'share'))
-    STATE_DIR = os.environ.get(
-        'XDG_STATE_HOME', os.path.join(USER_HOME, '.local', 'state'))
-    CACHE_DIR = os.environ.get(
-        'XDG_CACHE_HOME', os.path.join(USER_HOME, '.cache'))
-
-    HOME_DIR = os.path.join(CONFIG_DIR, 'scikms')
-    DATA_DIR = os.path.join(DATA_DIR, 'scikms')
-    STATE_DIR = os.path.join(STATE_DIR, 'scikms')
-    CACHE_DIR = os.path.join(CACHE_DIR, 'scikms')
-
-    USER_PLUGINS_DIR = os.path.join(DATA_DIR, 'plugins')
-    USER_THEMES_DIR = os.path.join(DATA_DIR, 'themes')
-
-    LOG_FILE = os.path.join(STATE_DIR, 'stdout.log')
-    STATE_FILE = os.path.join(STATE_DIR, 'state.json')
-    DEFAULT_RCFILE_PATH = os.path.join(HOME_DIR, 'scikmsrc')
+if sys.platform == "linux":
+    _DATA_BASE = os.environ.get(
+        "XDG_DATA_HOME", os.path.join(USER_HOME, ".local", "share")
+    )
+    _STATE_BASE = os.environ.get(
+        "XDG_STATE_HOME", os.path.join(USER_HOME, ".local", "state")
+    )
+    DATA_DIR = os.path.join(_DATA_BASE, "scikms")
+    LOG_FILE = os.path.join(_STATE_BASE, "scikms", "stdout.log")
 else:
-    HOME_DIR = os.path.join(USER_HOME, '.scikms')
-    DATA_DIR = os.path.join(HOME_DIR, 'data')
-    STATE_DIR = DATA_DIR
-    CACHE_DIR = os.path.join(HOME_DIR, 'cache')
-    USER_PLUGINS_DIR = os.path.join(HOME_DIR, 'plugins')
-    USER_THEMES_DIR = os.path.join(HOME_DIR, 'themes')
-
-    LOG_FILE = os.path.join(HOME_DIR, 'stdout.log')
-    STATE_FILE = os.path.join(DATA_DIR, 'state.json')
-    DEFAULT_RCFILE_PATH = os.path.join(USER_HOME, '.scikmsrc')
+    _HOME_DIR = os.path.join(USER_HOME, ".scikms")
+    DATA_DIR = os.path.join(_HOME_DIR, "data")
+    LOG_FILE = os.path.join(_HOME_DIR, "stdout.log")

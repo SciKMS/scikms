@@ -13,18 +13,15 @@ flake8:
 
 # Start narrow; widen PYLINT_PKGS as you stabilize more of the tree.
 PYLINT_PKGS=
-PYLINT_PKGS+=scikms/plugin.py
-PYLINT_PKGS+=scikms/server/
 PYLINT_PKGS+=scikms/kms/
+PYLINT_PKGS+=scikms/gui/kms/
 
 pylint:
 	uv run pylint ${PYLINT_PKGS}
 
 MYPY_PKGS=
-MYPY_PKGS+=scikms/app/
+MYPY_PKGS+=scikms/kms/
 MYPY_STRICT_PKGS=
-MYPY_STRICT_PKGS+=scikms/utils/reader.py
-MYPY_STRICT_PKGS+=scikms/server/
 
 mypy:
 	uv run mypy ${MYPY_PKGS}

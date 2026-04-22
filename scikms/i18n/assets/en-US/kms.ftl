@@ -2,7 +2,6 @@
 
 # App
 kms-app-title = SciKMS · Clinical Knowledge Manager
-kms-app-subtitle = Knowledge Management System
 
 # Navigation
 nav-library = Library
@@ -17,41 +16,23 @@ nav-settings = Settings
 # Common
 common-save = Save
 common-cancel = Cancel
-common-delete = Delete
 common-confirm = Confirm
 common-close = Close
-common-open = Open
-common-loading = Loading...
 common-empty = No data
 common-search = Search
-common-filter = Filter
-common-clear = Clear
-common-yes = Yes
-common-no = No
-common-ok = OK
 common-error = Error
 common-success = Success
-common-warning = Warning
 common-untitled = Untitled
-common-unknown = Unknown
-common-page = Page
-common-of = / { $total }
 common-next = Next
 common-prev = Previous
-common-refresh = Refresh
 
 # Sidebar stats
 sidebar-stats-papers = Papers
 sidebar-stats-figures = Figures
 sidebar-stats-pages = Pages
-sidebar-stats-annotated = Annotated
-sidebar-stats-storage = Storage
-sidebar-stats-database = Database
 sidebar-stats-reading = Reading
-sidebar-stats-unread = Unread
 sidebar-stats-read = Read
 sidebar-stats-starred = Starred
-sidebar-stats-projects = Projects
 
 # Sidebar filters
 sidebar-filter-status = Status
@@ -69,9 +50,6 @@ sidebar-filter-scope-all = All
 sidebar-filter-scope-content = Content
 sidebar-filter-scope-notes = Notes
 sidebar-filter-scope-title-abstract = Title + abstract
-sidebar-section-navigation = Navigation
-sidebar-section-stats = Library stats
-sidebar-section-filters = Filters
 
 # EBM
 ebm-1 = Level I · Systematic Review / Meta-analysis
@@ -90,8 +68,6 @@ kms-library-empty-cta = Import papers
 kms-library-no-match = No papers match the current filters.
 kms-library-page-info = { $start }–{ $end } of { $total } papers
 kms-library-count = { $count } papers
-kms-library-bulk-mode = Bulk select
-kms-library-bulk-delete = Delete { $count } selected
 kms-library-sort = Sort by
 kms-library-paper-status-unread = Unread
 kms-library-paper-status-reading = Reading
@@ -117,7 +93,6 @@ kms-import-pdf-process = Process { $count } files
 kms-import-pdf-extract-images = Auto-extract figures
 kms-import-pdf-success = Imported { $count } papers.
 kms-import-pdf-failed = Failed { $count } papers.
-kms-import-pdf-duplicate = Already in library
 kms-import-doi-prompt = DOI list (one per line)
 kms-import-doi-fetch = Fetch from CrossRef
 kms-import-doi-download-pdf = Download open-access PDF (Unpaywall) if available
@@ -162,11 +137,8 @@ kms-stats-title = Overview & Analytics
 kms-stats-evidence-pyramid = EBM Evidence Pyramid
 kms-stats-study-design = Study design distribution
 kms-stats-specialty = Specialty distribution
-kms-stats-impact-factor = Impact Factor distribution
-kms-stats-reading-progress = Reading progress
 kms-stats-timeline = Papers per year
 kms-stats-top-tags = Top tags
-kms-stats-no-data = No data to display.
 kms-stats-empty-title = No papers yet
 kms-stats-empty-message = Import your first paper to see evidence-level, study-design, specialty, and other breakdowns.
 kms-stats-empty-cta = Import papers
@@ -174,18 +146,14 @@ kms-stats-empty-cta = Import papers
 # Rename page
 kms-rename-title = Rename files
 kms-rename-pattern-info = Pattern: [Year] Author - Title.pdf
-kms-rename-bulk-tab = Bulk rename
-kms-rename-individual-tab = Per-paper rename
 kms-rename-storage-path = Storage folder
 kms-rename-open-folder = Open folder
 kms-rename-preview = Preview
 kms-rename-execute = Rename { $count } files
 kms-rename-skip-existing = Skip already-renamed files
-kms-rename-no-pdf = No PDF files in storage.
 
 # Export page
 kms-export-title = Export data
-kms-export-format = Format
 kms-export-ris = Export RIS (Zotero / EndNote)
 kms-export-bib = Export BibTeX (LaTeX)
 kms-export-excel = Export Excel (.xlsx)
@@ -202,8 +170,6 @@ kms-settings-tag-dict-help = One tag per line. Used to auto-tag new papers.
 kms-settings-tag-save = Save dictionary
 kms-settings-tag-reset = Reset to defaults
 kms-settings-atlas-section = Figure extraction
-kms-settings-atlas-min-px = Minimum image size (px)
-kms-settings-atlas-reextract = Re-extract from all PDFs
 kms-settings-atlas-clear = Clear entire atlas
 kms-settings-data-section = Data
 kms-settings-data-root = Data folder
@@ -218,23 +184,14 @@ kms-settings-version = Version
 # Confirmations
 confirm-delete-paper = Delete this paper? This cannot be undone.
 confirm-delete-figure = Delete this figure from atlas?
-confirm-delete-all-figures = Delete all { $count } figures from this paper?
 confirm-clear-atlas = Clear the entire atlas? All figures will be permanently deleted.
 confirm-clear-tag-dict = Reset tag dictionary to defaults?
 
 # Errors
-error-pdf-invalid = Not a valid PDF file.
-error-doi-not-found = DOI not found.
 error-pubmed-not-found = No PubMed results.
-error-network = Network error.
-error-disk-full = Disk full.
 
 # Status
-status-imported = Imported { $count } papers.
-status-deleted = Deleted { $count } papers.
 status-renamed = Renamed { $count } files.
-status-extracting-figures = Extracting figures from PDF...
-status-extracted = Extracted { $count } figures.
 
 # Theme (Fluent migration)
 kms-settings-theme = Theme

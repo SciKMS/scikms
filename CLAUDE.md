@@ -44,27 +44,21 @@ Line length is **89** (enforced by flake8 and yapf).
 
 ### Layering
 
-UI is strictly separated from the domain. Anything importing PyQt6 lives under `scikms/gui/` or `scikms/app/`; everything in `scikms/kms/`, `scikms/server/`, `scikms/serializers/`, and `scikms/utils/` must stay UI-agnostic and safely importable in headless tests.
+UI is strictly separated from the domain. Anything importing PyQt6 lives under `scikms/gui/`; `scikms/kms/` is the headless clinical domain and must stay importable without a running QApplication.
 
 ```
 scikms/
   __main__.py       # entry point — reads QSettings, init_db(), shows MainWindow
-  plugin.py         # Plugin / PluginsManager — discovers dirs + `scikms.plugins_v1` entry points
-  config.py         # Config tree with deffield(); plugins attach subconfigs under it
   consts.py         # XDG paths on Linux; ~/.scikms elsewhere
-  app/              # AppMode flags (server / gui / cli); there is no monolithic App class
   kms/              # Clinical domain: db.py, clinical.py, importers.py, atlas.py, config.py
   gui/              # PyQt6 UI
     kms/
       main_window.py   # FluentWindow; pages registered as sub-interfaces
       pages/           # library, import, search, atlas, stats, rename, export, settings
-      dialogs/
-    widgets/, components/, theme.py, hotkey.py
+      dialogs/         # pdf_viewer, note_editor, image_viewer, figure_lightbox
+      shared.py        # PageHeader, EmptyStatePanel, BoundedRow, dim(); PAGE_MARGINS / PAGE_SPACING
   i18n/             # Fluent (.ftl) localization; `t(msg_id, ...)` is the translation function
     assets/{en-US,vi-VN}/kms.ftl
-  server/           # FuoServer + dslv1 parser + pubsub/rpc — DSL-driven RPC layer, not HTTP
-  serializers/      # Plain-text formatter infrastructure
-  utils/            # dispatch (Signal), aio, cache, reader, request, router, etc.
 ```
 
 ### Data layer (`scikms.kms`)
@@ -82,9 +76,15 @@ scikms/
 
 Always route user-visible strings through `scikms.i18n.t("msg-id", var=value)`. Default locale comes from `SCIKMS_LOCALE` env var → `QSettings("scikms","kms").value("locale")` → OS locale → `en_US`. `__main__.main()` defaults to `vi-VN` if nothing is set. Add new keys to both `scikms/i18n/assets/en-US/kms.ftl` and `scikms/i18n/assets/vi-VN/kms.ftl`; missing keys fall back to `en-US` then `zh-CN`.
 
-### Plugins
+### Shared GUI primitives
 
-`plugins_mgr` scans `USER_PLUGINS_DIR` (under the XDG/`~/.scikms` data dir) and setuptools entry-point group `scikms.plugins_v1`. A plugin module must expose `__alias__`, `__desc__`, `__version__`, plus `enable(app)` / `disable(app)`; optionally `init_config(config)`. A plugin named `scikms_foo` also gets the shorter config alias `foo` so users write `app.foo.X = Y` instead of `app.scikms_foo.X = Y`.
+`scikms.gui.kms.shared` is the single source of truth for cross-page layout constants and reusable widgets:
+
+- `PAGE_MARGINS = (24, 20, 24, 20)` and `PAGE_SPACING = 12` — the canonical root `QVBoxLayout` values for a KMS page.
+- `PageHeader(title, caption)` — every page's `TitleLabel` header; do not reach for `SubtitleLabel` directly or the page title stops out-ranking in-page card titles.
+- `EmptyStatePanel(icon, title, message, primary_text, on_primary)` — the shared zero-row surface. Used by Stats and Library for "no papers yet" with a CTA into Import.
+- `BoundedRow(child, max_width)` — horizontally gutters a child so metric rows and filter rails stop stretching into banners on ultrawide screens.
+- `dim(widget, alpha=0.72)` — applies a real `QGraphicsOpacityEffect`. Qt stylesheets silently drop `opacity`, so never use `setStyleSheet("opacity: …")` — it looks right and does nothing.
 
 ### Bundling
 
