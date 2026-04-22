@@ -14,38 +14,20 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import fitz  # PyMuPDF
+import requests
+
 from scikms import kms as _kms
 from scikms.kms.atlas import atlas_extract_from_pdf
 from scikms.kms.clinical import (
     auto_tag, build_renamed_filename, classify_all, parse_pico_from_abstract,
 )
-from scikms.kms.db import db_conn, check_duplicate
-
-
-try:
-    import fitz  # PyMuPDF
-    HAS_PYMUPDF = True
-except ImportError:
-    HAS_PYMUPDF = False
-
-try:
-    import requests
-    HAS_REQUESTS = True
-except ImportError:
-    HAS_REQUESTS = False
-
-try:
-    from PIL import Image  # noqa: F401
-    HAS_PIL = True
-except ImportError:
-    HAS_PIL = False
+from scikms.kms.db import check_duplicate, db_conn, insert_paper
 
 
 def extract_pdf_text_and_meta(pdf_bytes: bytes) -> dict:
     empty = {"full_text": "", "pages": 0, "title": "", "author": "",
              "abstract": "", "keywords": "", "first_page_text": ""}
-    if not HAS_PYMUPDF:
-        return empty
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         meta = doc.metadata or {}
@@ -111,8 +93,6 @@ def _extract_doi(text: str) -> str | None:
 
 
 def fetch_crossref(doi: str) -> dict:
-    if not HAS_REQUESTS:
-        return {}
     try:
         r = requests.get(
             f"https://api.crossref.org/works/{doi}",
@@ -139,8 +119,6 @@ def fetch_crossref(doi: str) -> dict:
 
 
 def fetch_pubmed(query: str) -> dict:
-    if not HAS_REQUESTS:
-        return {}
     BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
     try:
         r1 = requests.get(
@@ -185,7 +163,7 @@ def fetch_pubmed(query: str) -> dict:
 
 def extract_meta_with_gemini(text: str) -> dict:
     api_key = os.getenv("GEMINI_API_KEY", "")
-    if not api_key or not HAS_REQUESTS:
+    if not api_key:
         return {}
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
@@ -211,7 +189,7 @@ def extract_meta_with_gemini(text: str) -> dict:
 
 
 def find_open_access_pdf(doi: str) -> dict:
-    if not HAS_REQUESTS or not doi:
+    if not doi:
         return {"found": False}
     try:
         r = requests.get(
@@ -227,8 +205,6 @@ def find_open_access_pdf(doi: str) -> dict:
 
 
 def download_and_save_pdf(pdf_url: str, doi: str = "", filename_hint: str = "") -> dict:
-    if not HAS_REQUESTS:
-        return {"success": False, "error": "requests not available"}
     try:
         r = requests.get(pdf_url, timeout=30, headers={"User-Agent": "Mozilla/5.0"},
                          allow_redirects=True)
@@ -242,13 +218,12 @@ def download_and_save_pdf(pdf_url: str, doi: str = "", filename_hint: str = "") 
         dest = _kms.STORAGE_DIR / f"{md5[:8]}_{safe}.pdf"
         dest.write_bytes(content)
         pages, full_text = 0, ""
-        if HAS_PYMUPDF:
-            try:
-                d = extract_pdf_text_and_meta(content)
-                pages = d.get("pages", 0)
-                full_text = d.get("full_text", "")[:50000]
-            except Exception:
-                pass
+        try:
+            d = extract_pdf_text_and_meta(content)
+            pages = d.get("pages", 0)
+            full_text = d.get("full_text", "")[:50000]
+        except Exception:
+            pass
         return {"success": True, "file_path": str(dest), "pages": pages, "full_text": full_text}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -291,7 +266,7 @@ def process_pdf_bytes(file_bytes: bytes, filename: str, extract_images: bool = T
         if not meta.get("authors") and fb.get("authors"):
             meta["authors"] = fb["authors"]
 
-    if HAS_REQUESTS and (not meta.get("title") or not meta.get("authors")):
+    if not meta.get("title") or not meta.get("authors"):
         ai = extract_meta_with_gemini(pdf_data.get("first_page_text") or full_text[:3000])
         for k in ["title", "authors", "year", "journal", "abstract", "keywords"]:
             if not meta.get(k) and ai.get(k):
@@ -346,22 +321,9 @@ def process_pdf_bytes(file_bytes: bytes, filename: str, extract_images: bool = T
         "citation_count":    0,
     }
     paper["renamed_filename"] = build_renamed_filename(paper)
+    paper["id"] = insert_paper(paper)
 
-    with db_conn() as conn:
-        conn.execute("""
-            INSERT INTO papers
-            (md5,original_filename,renamed_filename,title,authors,year,journal,doi,
-             abstract,keywords,full_text,tags,notes,highlights,status,starred,pages,
-             added_at,file_path,project,reading_position,evidence_level,study_design,
-             clinical_specialty,pico_json,risk_of_bias_json,impact_factor,citation_count)
-            VALUES (:md5,:original_filename,:renamed_filename,:title,:authors,:year,:journal,:doi,
-                    :abstract,:keywords,:full_text,:tags,:notes,:highlights,:status,:starred,:pages,
-                    :added_at,:file_path,:project,:reading_position,:evidence_level,:study_design,
-                    :clinical_specialty,:pico_json,:risk_of_bias_json,:impact_factor,:citation_count)
-        """, paper)
-        paper["id"] = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-    if extract_images and HAS_PYMUPDF and HAS_PIL:
+    if extract_images:
         try:
             n = atlas_extract_from_pdf(
                 file_bytes, paper["id"],
@@ -441,22 +403,9 @@ def import_by_doi(doi: str, auto_download_pdf: bool = False) -> dict:
         "citation_count":    0,
     }
     paper["renamed_filename"] = build_renamed_filename(paper)
-
-    with db_conn() as conn:
-        try:
-            conn.execute("""
-                INSERT INTO papers
-                (md5,original_filename,renamed_filename,title,authors,year,journal,doi,
-                 abstract,keywords,full_text,tags,notes,highlights,status,starred,pages,
-                 added_at,file_path,project,reading_position,evidence_level,study_design,
-                 clinical_specialty,pico_json,risk_of_bias_json,impact_factor,citation_count)
-                VALUES (:md5,:original_filename,:renamed_filename,:title,:authors,:year,:journal,:doi,
-                        :abstract,:keywords,:full_text,:tags,:notes,:highlights,:status,:starred,:pages,
-                        :added_at,:file_path,:project,:reading_position,:evidence_level,:study_design,
-                        :clinical_specialty,:pico_json,:risk_of_bias_json,:impact_factor,:citation_count)
-            """, paper)
-            paper["id"] = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-        except Exception as e:
-            return {"error": str(e)}
+    try:
+        paper["id"] = insert_paper(paper)
+    except Exception as e:
+        return {"error": str(e)}
 
     return paper

@@ -9,7 +9,12 @@ from __future__ import annotations
 import hashlib
 import re
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
+
+import fitz  # PyMuPDF
+import pandas as pd
+from PIL import Image
 
 from scikms import kms as _kms
 from scikms.kms.config import (
@@ -21,23 +26,12 @@ def _atlas_paths():
     return _kms.ATLAS_ROOT / "metadata.parquet", _kms.ATLAS_ROOT / "metadata.csv"
 
 
-try:
-    import pandas as pd
-    HAS_PANDAS = True
-except ImportError:
-    HAS_PANDAS = False
-
-
 def _empty_df():
-    if not HAS_PANDAS:
-        return None
     return pd.DataFrame(columns=ATLAS_META_COLS)
 
 
 def atlas_load():
     """Load figure-atlas metadata. Parquet preferred, CSV fallback, empty otherwise."""
-    if not HAS_PANDAS:
-        return None
     parquet, csv = _atlas_paths()
     try:
         if parquet.exists():
@@ -53,8 +47,6 @@ def atlas_load():
 
 
 def atlas_save(df) -> None:
-    if not HAS_PANDAS:
-        return
     for col in ATLAS_META_COLS:
         if col not in df.columns:
             df[col] = ""
@@ -70,8 +62,6 @@ def atlas_save(df) -> None:
 
 
 def atlas_search(query: str, df=None):
-    if not HAS_PANDAS:
-        return None
     if df is None:
         df = atlas_load()
     if df is None or df.empty:
@@ -136,14 +126,6 @@ def atlas_extract_from_pdf(
     min_px: int = 120,
 ) -> int:
     """Extract images from ``pdf_bytes`` into the atlas. Returns count saved."""
-    try:
-        import fitz  # PyMuPDF
-        from PIL import Image
-    except ImportError:
-        return 0
-    if not HAS_PANDAS:
-        return 0
-
     saved = 0
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -151,8 +133,6 @@ def atlas_extract_from_pdf(
         return 0
 
     df = atlas_load()
-    if df is None:
-        return 0
 
     for page_idx in range(len(doc)):
         page = doc[page_idx]
@@ -189,7 +169,6 @@ def atlas_extract_from_pdf(
 
             thumb_rel = None
             try:
-                from io import BytesIO
                 pil_img = Image.open(BytesIO(img_bytes))
                 pil_img.thumbnail((200, 200))
                 thumb_fname = f"p{page_idx+1}_x{xref}_thumb.{ext}"

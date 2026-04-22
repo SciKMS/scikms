@@ -185,11 +185,6 @@ class AtlasPage(QWidget):
     # ------------------------------------------------------------------
     def refresh(self) -> None:
         self._df = atlas_load()
-        if self._df is None:
-            self._lbl_summary.setText("pandas not installed")
-            self._lst_papers.clear()
-            self._grid.clear()
-            return
 
         if not self._df.empty:
             import pandas as pd
