@@ -181,6 +181,11 @@ kms-settings-language = Ngôn ngữ
 kms-settings-language-vi = Tiếng Việt
 kms-settings-language-en = English
 kms-settings-language-restart = Đổi ngôn ngữ sẽ áp dụng sau khi khởi động lại.
+kms-settings-restart-title = Cần khởi động lại
+kms-settings-restart-message = Thay đổi sẽ có hiệu lực sau khi khởi động lại ứng dụng. Khởi động lại ngay?
+kms-settings-restart-now = Khởi động lại ngay
+kms-settings-restart-later = Để sau
+kms-settings-restart-later-banner = Thay đổi sẽ có hiệu lực ở lần chạy kế.
 kms-settings-about = Về SciKMS
 kms-settings-version = Phiên bản
 

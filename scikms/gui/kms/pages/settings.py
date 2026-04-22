@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QSettings, Qt
-from PyQt6.QtWidgets import QFileDialog, QVBoxLayout, QWidget, QScrollArea
+from PyQt6.QtCore import QSettings, QTimer
+from PyQt6.QtWidgets import (
+    QApplication, QFileDialog, QScrollArea, QVBoxLayout, QWidget,
+)
 from qfluentwidgets import (
     BodyLabel, CardWidget, FluentIcon, InfoBar, InfoBarPosition, MessageBox,
     OptionsConfigItem, OptionsSettingCard, OptionsValidator, PlainTextEdit,
-    PrimaryPushButton, PushButton, PushSettingCard, QConfig, SettingCardGroup,
+    PrimaryPushButton, PushButton, PushSettingCard, SettingCardGroup,
     StrongBodyLabel, Theme, setTheme,
 )
 
@@ -183,10 +188,8 @@ class SettingsPage(QWidget):
     def _on_lang_change(self, item) -> None:
         val = item.value if hasattr(item, "value") else str(item)
         self._qs.setValue("locale", val)
-        InfoBar.info(
-            title=t("kms-settings-language-restart"), content="",
-            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000,
-        )
+        self._qs.sync()
+        self._prompt_restart()
 
     def _on_clear_atlas(self) -> None:
         n = atlas_count()
@@ -213,10 +216,69 @@ class SettingsPage(QWidget):
                             parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000)
 
     def _on_change_data_root(self) -> None:
-        new_path = QFileDialog.getExistingDirectory(self, t("kms-settings-data-change"), str(DATA_ROOT))
+        new_path = QFileDialog.getExistingDirectory(
+            self, t("kms-settings-data-change"), str(DATA_ROOT)
+        )
         if new_path:
             self._qs.setValue("data_root", new_path)
+            self._qs.sync()
+            self._prompt_restart()
+
+    # ------------------------------------------------------------------
+    def _prompt_restart(self) -> None:
+        """Confirm + restart the app so the new setting takes effect."""
+        # Resolve top-level window so the MessageBox has the correct parent and
+        # blocks the whole app while we ask, not just the settings scroll area.
+        parent = self.window() or self
+        box = MessageBox(
+            t("kms-settings-restart-title"),
+            t("kms-settings-restart-message"),
+            parent,
+        )
+        # Customize button labels when available — MessageBox ships yes/cancel.
+        if hasattr(box, "yesButton"):
+            box.yesButton.setText(t("kms-settings-restart-now"))
+        if hasattr(box, "cancelButton"):
+            box.cancelButton.setText(t("kms-settings-restart-later"))
+        if box.exec():
+            # Delay the exec so Qt can finish paint + settings flush cleanly.
+            QTimer.singleShot(0, self._restart_app)
+        else:
             InfoBar.info(
-                title=t("kms-settings-language-restart"), content=new_path,
+                title=t("kms-settings-restart-later-banner"), content="",
                 parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000,
             )
+
+    @staticmethod
+    def _restart_app() -> None:
+        """Spawn a fresh process of ourselves, then exit this one.
+
+        ``subprocess.Popen`` + ``sys.exit`` is preferred over ``os.execv``
+        on macOS: re-exec'ing a Qt/Cocoa-initialized process makes the
+        kernel reject its task-policy inheritance ("Task policy set failed:
+        4 ((os/kern) invalid argument)"). A clean child process, started
+        with ``start_new_session=True`` so the parent exit does not kill
+        the child, avoids the warning entirely.
+
+        Works in both ``python -m scikms`` and the PyInstaller-bundled
+        executable: when ``sys.frozen`` is set, ``sys.executable`` IS the
+        bundle binary and its own argv is re-used; otherwise we re-invoke
+        the Python interpreter with the current argv (the console script
+        stub installed by ``uv sync`` is a plain Python script).
+        """
+        if getattr(sys, "frozen", False):
+            cmd = [sys.executable, *sys.argv[1:]]
+        else:
+            cmd = [sys.executable, *sys.argv]
+        # The original process eagerly sets SCIKMS_LOCALE from QSettings at
+        # startup so the i18n module picks it up. If we let the child inherit
+        # that env var, it will ignore the freshly-saved QSettings value and
+        # stay on the old locale after restart. Strip it so the child re-reads
+        # QSettings on its own.
+        env = os.environ.copy()
+        env.pop("SCIKMS_LOCALE", None)
+        subprocess.Popen(cmd, env=env, start_new_session=True)
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()
+        sys.exit(0)
