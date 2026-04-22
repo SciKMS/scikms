@@ -17,7 +17,9 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QGraphicsOpacityEffect, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget,
+)
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIconBase, IconWidget, PrimaryPushButton,
     StrongBodyLabel, TitleLabel,
@@ -26,6 +28,23 @@ from qfluentwidgets import (
 
 PAGE_MARGINS: tuple[int, int, int, int] = (24, 20, 24, 20)
 PAGE_SPACING: int = 12
+
+
+def dim(widget: QWidget, alpha: float = 0.72) -> QWidget:
+    """Dim ``widget`` to ``alpha`` opacity (0.0–1.0).
+
+    Qt stylesheets silently ignore the CSS ``opacity`` property, so
+    ``setStyleSheet("opacity: 0.72;")`` looks right but applies nothing and
+    leaves secondary text rendered at full weight. Use this helper instead —
+    it installs a ``QGraphicsOpacityEffect`` that works in both light and
+    dark themes without hard-coding colours.
+
+    Returns ``widget`` for chaining.
+    """
+    effect = QGraphicsOpacityEffect(widget)
+    effect.setOpacity(alpha)
+    widget.setGraphicsEffect(effect)
+    return widget
 
 
 class PageHeader(QWidget):

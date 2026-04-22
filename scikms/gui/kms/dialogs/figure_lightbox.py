@@ -17,6 +17,7 @@ from qfluentwidgets import (
     PushButton, StrongBodyLabel, TransparentToolButton,
 )
 
+from scikms.gui.kms.shared import dim
 from scikms.i18n import t
 
 
@@ -87,7 +88,7 @@ class FigureLightboxDialog(QDialog):
             shown = ctx[:400] + ("…" if len(ctx) > 400 else "")
             lbl_ctx = CaptionLabel(shown)
             lbl_ctx.setWordWrap(True)
-            lbl_ctx.setStyleSheet("opacity: 0.72;")
+            dim(lbl_ctx, 0.72)
             lay.addWidget(lbl_ctx)
 
         # --- Action row -----------------------------------------------------

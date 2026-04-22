@@ -29,7 +29,7 @@ from qfluentwidgets import (
     StrongBodyLabel, TransparentPushButton, TransparentToolButton,
 )
 
-from scikms.gui.kms.shared import PageHeader
+from scikms.gui.kms.shared import PageHeader, dim
 from scikms.i18n import t
 from scikms.kms.config import (
     CLINICAL_SPECIALTIES, SORT_OPTIONS, STUDY_DESIGN_KEYWORDS,
@@ -161,7 +161,7 @@ class PaperCard(CardWidget):
                 if len(abstract) > _ABSTRACT_MAX_CHARS else abstract
             snip = CaptionLabel(shown)
             snip.setWordWrap(True)
-            snip.setStyleSheet("opacity: 0.72;")
+            dim(snip, 0.72)
             # ~3 lines so all cards share a consistent body block and the row
             # heights in the grid stay even across short/long abstracts.
             snip.setMinimumHeight(54)
@@ -254,7 +254,10 @@ class LibraryPage(QWidget):
         # Empty-state label sits inside the scroll area when no cards exist.
         self._lbl_empty = BodyLabel("", self)
         self._lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._lbl_empty.setStyleSheet("opacity: 0.6; padding: 48px;")
+        # Padding via stylesheet (supported); opacity via QGraphicsOpacityEffect
+        # (Qt stylesheets silently ignore CSS `opacity`).
+        self._lbl_empty.setStyleSheet("padding: 48px;")
+        dim(self._lbl_empty, 0.6)
         self._lbl_empty.hide()
         layout.addWidget(self._lbl_empty)
 
