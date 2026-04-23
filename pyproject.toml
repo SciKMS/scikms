@@ -62,6 +62,29 @@ exclude = ["tests*"]
     "i18n/assets/*/*.ftl",
 ]
 
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["scikms"] 
+exclude = [
+  "**/test",          # Exclude tests/ folder
+  "**/test_*.py",     # Exclude test_ python files
+  "**/__pycache__",   # Exclude Python cache files
+  "**/.*",            # Exclude hidden folders (.git, .venv, etc) 
+  "**/*.egg-info",    # Exclude package metadata files
+  "**/build",         # Exclude build artifact
+  "**/node_modules"   # Exclude node_modules if any
+]
+# typeCheckingMode = "basic"
+# useLibraryCodeForTypes = true
+# reportMissingImports = "error"
+# reportMissingTypeStubs = "none"
+# reportUnusedImport = "warning"
+
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 89
+
 [tool.yapf]
 column_limit = 89
 based_on_style = "pep8"
