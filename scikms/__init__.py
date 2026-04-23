@@ -8,4 +8,4 @@ from importlib.metadata import version as _v, PackageNotFoundError as _E
 try:
     __version__ = _v("scikms")
 except _E:
-    __version__ = "0.1.0"
+    __version__ = "0.0.1"
