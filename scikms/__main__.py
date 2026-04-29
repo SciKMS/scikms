@@ -61,6 +61,7 @@ def main() -> None:
         ).lower()
     except Exception:
         chosen_theme = "auto"
+
     theme_map = {"auto": Theme.AUTO, "light": Theme.LIGHT, "dark": Theme.DARK}
     setTheme(theme_map.get(chosen_theme, Theme.AUTO))
     # setThemeColor("#4338CA")

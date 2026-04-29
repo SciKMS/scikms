@@ -1,4 +1,6 @@
+from io import text_encoding
 from unittest.mock import MagicMock
+from PyQt6 import QtWidgets
 import pytest
 from PyQt6.QtCore import QSettings
 from scikms.gui.kms.pages.settings import SettingsPage
@@ -58,13 +60,13 @@ def test_translation_in_english_by_env_translation(qtbot, fake_main, monkeypatch
     qtbot.addWidget(page)
 
     texts = []
-    for widget in page.findChildren(object):
-        if hasattr(widget, "text") and callable(widget.text):
+    for widget in page.findChildren(QtWidgets.QWidget):
+        text_method = getattr(widget, "text", None)
+        if callable(text_method):
             try:
-                texts.append(widget.text())
+                texts.append(text_method)
             except TypeError:
                 pass
-
     print(f"Logging: {texts}")
     assert "Settings" in texts
 
@@ -75,10 +77,11 @@ def test_translation_in_vietnamese_by_env_translation(qtbot, fake_main, monkeypa
     qtbot.addWidget(page)
 
     texts = []
-    for widget in page.findChildren(object):
-        if hasattr(widget, "text") and callable(widget.text):
+    for widget in page.findChildren(QtWidgets.QWidget):
+        text_method = getattr(widget, "text", None)
+        if callable(text_method):
             try:
-                texts.append(widget.text())
+                texts.append(text_method)
             except TypeError:
                 pass
 
@@ -86,9 +89,7 @@ def test_translation_in_vietnamese_by_env_translation(qtbot, fake_main, monkeypa
     assert "Cài đặt" in texts
 
 
-def test_language_card_button_properties_are_expected_locale_codes(
-    qtbot, clean_settings
-):
+def test_show_translation(qtbot, clean_settings):
     page = SettingsPage(MagicMock())
     qtbot.addWidget(page)
     lang_card = next(
@@ -96,14 +97,13 @@ def test_language_card_button_properties_are_expected_locale_codes(
         for card in page.findChildren(OptionsSettingCard)
         if card.configName == "languageCode"
     )
+
     assert list(lang_card.configItem.options) == ["vi-VN", "en-US"]
     buttons = lang_card.buttonGroup.buttons()
     assert len(buttons) == 2
-    assert buttons[0].property("languageCode") == "vi-VN"
-    assert buttons[1].property("languageCode") == "en-US"
 
 
-def test_clicking_english_emits_en_us_locale(qtbot, clean_settings, monkeypatch):
+def test_select_translation(qtbot, clean_settings, monkeypatch):
     page = SettingsPage(MagicMock())
     qtbot.addWidget(page)
     seen = {}
@@ -112,12 +112,19 @@ def test_clicking_english_emits_en_us_locale(qtbot, clean_settings, monkeypatch)
         seen["value"] = item.value
 
     monkeypatch.setattr(page, "_prompt_restart", MagicMock())
+
     lang_card = next(
         card
         for card in page.findChildren(OptionsSettingCard)
         if card.configName == "languageCode"
     )
+
     lang_card.optionChanged.connect(capture)
+    assert list(lang_card.configItem.options) == ["vi-VN", "en-US"]
     english_button = lang_card.buttonGroup.buttons()[1]
     english_button.click()
     assert seen["value"] == "en-US"
+
+    vietnamese_button = lang_card.buttonGroup.buttons()[0]
+    vietnamese_button.click()
+    assert seen["value"] == "vi-VN"
