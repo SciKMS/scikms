@@ -9,13 +9,30 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QSettings, QTimer
 from PyQt6.QtWidgets import (
-    QApplication, QFileDialog, QScrollArea, QVBoxLayout, QWidget,
+    QApplication,
+    QFileDialog,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
 )
 from qfluentwidgets import (
-    BodyLabel, CardWidget, FluentIcon, InfoBar, InfoBarPosition, MessageBox,
-    OptionsConfigItem, OptionsSettingCard, OptionsValidator, PlainTextEdit,
-    PrimaryPushButton, PushButton, PushSettingCard, SettingCardGroup,
-    StrongBodyLabel, Theme, setTheme,
+    BodyLabel,
+    CardWidget,
+    FluentIcon,
+    InfoBar,
+    InfoBarPosition,
+    MessageBox,
+    OptionsConfigItem,
+    OptionsSettingCard,
+    OptionsValidator,
+    PlainTextEdit,
+    PrimaryPushButton,
+    PushButton,
+    PushSettingCard,
+    SettingCardGroup,
+    StrongBodyLabel,
+    Theme,
+    setTheme,
 )
 
 from scikms import __version__
@@ -41,11 +58,15 @@ class _TagDictCard(CardWidget):
         lay.setSpacing(8)
         lay.addWidget(StrongBodyLabel(t("kms-settings-tag-dict")))
         lay.addWidget(BodyLabel(t("kms-settings-tag-dict-help")))
+
         self._txt = PlainTextEdit(self)
         self._txt.setPlainText("\n".join(get_tag_dict()))
         self._txt.setMinimumHeight(200)
+
         lay.addWidget(self._txt, 1)
+
         from PyQt6.QtWidgets import QHBoxLayout
+
         row = QHBoxLayout()
         btn_save = PrimaryPushButton(FluentIcon.SAVE, t("kms-settings-tag-save"))
         btn_save.clicked.connect(self._on_save)
@@ -60,10 +81,17 @@ class _TagDictCard(CardWidget):
         self._txt.setPlainText("\n".join(get_tag_dict()))
 
     def _on_save(self) -> None:
-        terms = [ln.strip() for ln in self._txt.toPlainText().splitlines() if ln.strip()]
+        terms = [
+            ln.strip() for ln in self._txt.toPlainText().splitlines() if ln.strip()
+        ]
         save_tag_dict(terms)
-        InfoBar.success(title=t("common-success"), content="",
-                        parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000)
+        InfoBar.success(
+            title=t("common-success"),
+            content="",
+            parent=self,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=2000,
+        )
 
     def _on_reset(self) -> None:
         box = MessageBox(t("common-confirm"), t("confirm-clear-tag-dict"), self)
@@ -84,6 +112,7 @@ class SettingsPage(QWidget):
         outer.setContentsMargins(24, 20, 24, 20)
         outer.setSpacing(12)
 
+        # We need to add the local to this code
         outer.addWidget(PageHeader(t("kms-settings-title")))
 
         scroll = QScrollArea(self)
@@ -98,15 +127,19 @@ class SettingsPage(QWidget):
         appearance = SettingCardGroup(t("kms-settings-title"), body)
         theme_card = OptionsSettingCard(
             configItem=OptionsConfigItem(
-                "scikms", "theme", str(self._qs.value("theme", "auto") or "auto"),
-                OptionsValidator(["auto", "light", "dark"]),
+                group="scikms",
+                name="theme",
+                default=str(self._qs.value("theme", "auto") or "auto"),
+                validator=OptionsValidator(["auto", "light", "dark"]),
             ),
             icon=FluentIcon.BRUSH,
             title=t("kms-settings-theme"),
             content=t("kms-settings-language-restart"),
-            texts=[t("kms-settings-theme-auto"),
-                   t("kms-settings-theme-light"),
-                   t("kms-settings-theme-dark")],
+            texts=[
+                t("kms-settings-theme-auto"),
+                t("kms-settings-theme-light"),
+                t("kms-settings-theme-dark"),
+            ],
             parent=appearance,
         )
         theme_card.optionChanged.connect(self._on_theme_change)
@@ -114,8 +147,13 @@ class SettingsPage(QWidget):
 
         lang_card = OptionsSettingCard(
             configItem=OptionsConfigItem(
-                "scikms", "locale", str(self._qs.value("locale", "vi-VN") or "vi-VN"),
-                OptionsValidator(["vi-VN", "en-US"]),
+                group="scikms",
+                # We change the name to languageCode because 'locale' variable name
+                # colides with the Qt property
+                # it sets the languageCode as the property in the button for each option
+                name="languageCode",
+                default=str(self._qs.value("locale", "vi-VN")),
+                validator=OptionsValidator(["vi-VN", "en-US"]),
             ),
             icon=FluentIcon.LANGUAGE,
             title=t("kms-settings-language"),
@@ -124,6 +162,7 @@ class SettingsPage(QWidget):
             parent=appearance,
         )
         lang_card.optionChanged.connect(self._on_lang_change)
+
         appearance.addSettingCard(lang_card)
         body_lay.addWidget(appearance)
 
@@ -186,9 +225,13 @@ class SettingsPage(QWidget):
         self._qs.setValue("theme", val)
 
     def _on_lang_change(self, item) -> None:
+        # print(f"item: {item}")
         val = item.value if hasattr(item, "value") else str(item)
         self._qs.setValue("locale", val)
         self._qs.sync()
+
+        # print(f"val changed: {val}")
+        # print(f"Value of QSettings: {self._qs.value('locale', 'vi-VN')}")
         self._prompt_restart()
 
     def _on_clear_atlas(self) -> None:
@@ -212,8 +255,13 @@ class SettingsPage(QWidget):
                                 pass
             atlas_save(df.iloc[0:0])
             self.refresh()
-            InfoBar.success(title=t("common-success"), content="",
-                            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000)
+            InfoBar.success(
+                title=t("common-success"),
+                content="",
+                parent=self,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=2000,
+            )
 
     def _on_change_data_root(self) -> None:
         new_path = QFileDialog.getExistingDirectory(
@@ -245,8 +293,11 @@ class SettingsPage(QWidget):
             QTimer.singleShot(0, self._restart_app)
         else:
             InfoBar.info(
-                title=t("kms-settings-restart-later-banner"), content="",
-                parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000,
+                title=t("kms-settings-restart-later-banner"),
+                content="",
+                parent=self,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
             )
 
     @staticmethod
@@ -275,10 +326,19 @@ class SettingsPage(QWidget):
         # that env var, it will ignore the freshly-saved QSettings value and
         # stay on the old locale after restart. Strip it so the child re-reads
         # QSettings on its own.
+
+        # Debugging the QSettings
+        qs = QSettings("scikms", "kms")
+        # print("restart sees QSettings locale:", qs.value("locale", "vi-VN"))
+        # print("restart sees env locale:", os.environ.get("SCIKMS_LOCALE"))
+
         env = os.environ.copy()
         env.pop("SCIKMS_LOCALE", None)
+
         subprocess.Popen(cmd, env=env, start_new_session=True)
         app = QApplication.instance()
+
         if app is not None:
             app.quit()
+
         sys.exit(0)

@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from PyQt6.QtCore import pyqtSignal
 from qfluentwidgets import (
-    FluentIcon, FluentWindow, NavigationItemPosition, setTheme, Theme,
+    FluentIcon,
+    FluentWindow,
+    NavigationItemPosition,
+    setTheme,
+    Theme,
 )
 
 from scikms.i18n import t
@@ -26,14 +30,14 @@ from .pages.stats import StatsPage
 
 # (page_key, icon_attr_name, label_key) — icon names mapped to FluentIcon enum.
 _PAGES: list[tuple[str, str, str]] = [
-    ("library",  "LIBRARY",  "nav-library"),
-    ("import",   "DOWNLOAD", "nav-import"),
-    ("search",   "SEARCH",   "nav-search"),
-    ("atlas",    "PHOTO",    "nav-atlas"),
-    ("stats",    "PIE_SINGLE", "nav-stats"),
-    ("rename",   "EDIT",     "nav-rename"),
-    ("export",   "SHARE",    "nav-export"),
-    ("settings", "SETTING",  "nav-settings"),
+    ("library", "LIBRARY", "nav-library"),
+    ("import", "DOWNLOAD", "nav-import"),
+    ("search", "SEARCH", "nav-search"),
+    ("atlas", "PHOTO", "nav-atlas"),
+    ("stats", "PIE_SINGLE", "nav-stats"),
+    ("rename", "EDIT", "nav-rename"),
+    ("export", "SHARE", "nav-export"),
+    ("settings", "SETTING", "nav-settings"),
 ]
 
 
@@ -48,24 +52,26 @@ class MainWindow(FluentWindow):
         self.resize(1280, 820)
 
         self._pages: dict[str, object] = {
-            "library":  LibraryPage(self),
-            "import":   ImportPage(self),
-            "search":   SearchPage(self),
-            "atlas":    AtlasPage(self),
-            "stats":    StatsPage(self),
-            "rename":   RenamePage(self),
-            "export":   ExportPage(self),
+            "library": LibraryPage(self),
+            "import": ImportPage(self),
+            "search": SearchPage(self),
+            "atlas": AtlasPage(self),
+            "stats": StatsPage(self),
+            "rename": RenamePage(self),
+            "export": ExportPage(self),
             "settings": SettingsPage(self),
         }
 
         # Each page widget needs an objectName for FluentWindow's stack routing.
         for key, page in self._pages.items():
+            # Error here cannot access the attribute or method of setObjectName
             page.setObjectName(f"kms-page-{key}")
 
         # Navigation: 7 main items at top, settings at bottom.
         for key, icon_name, label_key in _PAGES:
             position = (
-                NavigationItemPosition.BOTTOM if key == "settings"
+                NavigationItemPosition.BOTTOM
+                if key == "settings"
                 else NavigationItemPosition.TOP
             )
             icon = getattr(FluentIcon, icon_name, FluentIcon.HOME)
@@ -94,8 +100,13 @@ class MainWindow(FluentWindow):
     def current_filters(self) -> dict:
         """Legacy filter accessor. Filters now live per-page."""
         return {
-            "status": "all", "starred": False, "project": "",
-            "evidence": "", "design": "", "specialty": "", "scope": "all",
+            "status": "all",
+            "starred": False,
+            "project": "",
+            "evidence": "",
+            "design": "",
+            "specialty": "",
+            "scope": "all",
         }
 
     def refresh_sidebar_stats(self) -> None:

@@ -52,3 +52,8 @@ Thumbs.db
 node_modules/
 .aider*
 .tasks/
+
+# My projects 
+brainstorm/
+boilerplate/
+notes/

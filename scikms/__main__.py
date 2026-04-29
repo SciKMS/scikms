@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import logging
 
 
 def main() -> None:
@@ -11,6 +12,7 @@ def main() -> None:
     if "SCIKMS_LOCALE" not in os.environ:
         try:
             from PyQt6.QtCore import QSettings
+
             saved = QSettings("scikms", "kms").value("locale", "vi-VN")
             os.environ["SCIKMS_LOCALE"] = str(saved or "vi-VN")
         except Exception:
@@ -20,6 +22,7 @@ def main() -> None:
     try:
         from PyQt6.QtCore import QSettings
         from scikms.kms import set_data_root
+
         chosen = QSettings("scikms", "kms").value("data_root", "")
         if chosen:
             set_data_root(chosen)
@@ -28,8 +31,10 @@ def main() -> None:
 
     # HiDPI rounding (must be set before QApplication) for crisp Fluent rendering.
     from PyQt6.QtCore import Qt
+
     try:
         from PyQt6.QtGui import QGuiApplication
+
         QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
@@ -50,12 +55,16 @@ def main() -> None:
     # the upstream y-khoa CSS palette.
     try:
         from PyQt6.QtCore import QSettings
-        chosen_theme = (QSettings("scikms", "kms").value("theme", "auto") or "auto").lower()
+
+        chosen_theme = (
+            QSettings("scikms", "kms").value("theme", "auto") or "auto"
+        ).lower()
     except Exception:
         chosen_theme = "auto"
+
     theme_map = {"auto": Theme.AUTO, "light": Theme.LIGHT, "dark": Theme.DARK}
     setTheme(theme_map.get(chosen_theme, Theme.AUTO))
-    setThemeColor("#4338CA")
+    # setThemeColor("#4338CA")
 
     win = MainWindow()
     win.show()
