@@ -4329,7 +4329,7 @@ wheels = [
 
 [[package]]
 name = "scikms"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "fluent-runtime" },
