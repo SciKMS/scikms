@@ -93,6 +93,7 @@ kms-import-pdf-process = Process { $count } files
 kms-import-pdf-extract-images = Auto-extract figures
 kms-import-pdf-success = Imported { $count } papers.
 kms-import-pdf-failed = Failed { $count } papers.
+kms-import-pdf-duplicate = Skipped { $count } duplicates
 kms-import-doi-prompt = DOI list (one per line)
 kms-import-doi-fetch = Fetch from CrossRef
 kms-import-doi-download-pdf = Download open-access PDF (Unpaywall) if available

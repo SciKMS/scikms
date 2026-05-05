@@ -10,19 +10,38 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QFileDialog, QFormLayout, QHBoxLayout, QListWidget,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QAbstractItemView,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QListWidget,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 from qfluentwidgets import (
-    BodyLabel, CardWidget, CaptionLabel, CheckBox, FluentIcon, InfoBar,
-    InfoBarPosition, LineEdit, Pivot, PlainTextEdit, PrimaryPushButton,
-    ProgressBar, PushButton, SpinBox, StrongBodyLabel,
+    BodyLabel,
+    CaptionLabel,
+    CheckBox,
+    FluentIcon,
+    InfoBar,
+    InfoBarPosition,
+    LineEdit,
+    Pivot,
+    PlainTextEdit,
+    PrimaryPushButton,
+    ProgressBar,
+    PushButton,
+    SpinBox,
 )
 
 from scikms.gui.kms.shared import PageHeader
 from scikms.i18n import t
 from scikms.kms.clinical import (
-    auto_tag, build_renamed_filename, classify_all, parse_pico_from_abstract,
+    auto_tag,
+    build_renamed_filename,
+    classify_all,
+    parse_pico_from_abstract,
 )
 from scikms.kms.db import db_conn
 from scikms.kms.importers import fetch_pubmed, import_by_doi, process_pdf_bytes
@@ -49,6 +68,7 @@ class _PdfImportWorker(QThread):
                 res = process_pdf_bytes(data, path.name, extract_images=self._extract)
             except Exception as e:
                 res = {"error": str(e)}
+
             self.finished_one.emit(res)
 
 
@@ -71,8 +91,8 @@ class ImportPage(QWidget):
         self._stack = QStackedWidget(self)
 
         tabs = [
-            ("pdf",    t("kms-import-tab-pdf"),    self._build_pdf_tab),
-            ("doi",    t("kms-import-tab-doi"),    self._build_doi_tab),
+            ("pdf", t("kms-import-tab-pdf"), self._build_pdf_tab),
+            ("doi", t("kms-import-tab-doi"), self._build_doi_tab),
             ("pubmed", t("kms-import-tab-pubmed"), self._build_pubmed_tab),
             ("manual", t("kms-import-tab-manual"), self._build_manual_tab),
         ]
@@ -80,7 +100,11 @@ class ImportPage(QWidget):
             w = builder()
             w.setObjectName(f"import-{key}")
             self._stack.addWidget(w)
-            self._pivot.addItem(routeKey=key, text=label, onClick=lambda _checked=False, k=key: self._switch(k))
+            self._pivot.addItem(
+                routeKey=key,
+                text=label,
+                onClick=lambda _checked=False, k=key: self._switch(k),
+            )
 
         self._pivot.setCurrentItem(tabs[0][0])
         layout.addWidget(self._pivot)
@@ -99,7 +123,9 @@ class ImportPage(QWidget):
         lay.setSpacing(10)
 
         row = QHBoxLayout()
-        self._btn_pick = PrimaryPushButton(FluentIcon.FOLDER_ADD, t("kms-import-pdf-pick"))
+        self._btn_pick = PrimaryPushButton(
+            FluentIcon.FOLDER_ADD, t("kms-import-pdf-pick")
+        )
         self._btn_pick.clicked.connect(self._on_pick_pdfs)
         row.addWidget(self._btn_pick)
         self._btn_remove = PushButton(FluentIcon.REMOVE, t("kms-import-pdf-remove"))
@@ -117,15 +143,26 @@ class ImportPage(QWidget):
         lay.addLayout(row)
 
         self._lst_files = QListWidget()
-        self._lst_files.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self._lst_files.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection
+        )
         self._lst_files.itemSelectionChanged.connect(self._sync_file_buttons)
-        QShortcut(QKeySequence(Qt.Key.Key_Delete), self._lst_files,
-                  activated=self._on_remove_selected)
-        QShortcut(QKeySequence(Qt.Key.Key_Backspace), self._lst_files,
-                  activated=self._on_remove_selected)
+
+        QShortcut(
+            QKeySequence(Qt.Key.Key_Delete),
+            self._lst_files,
+            activated=self._on_remove_selected,
+        )
+        QShortcut(
+            QKeySequence(Qt.Key.Key_Backspace),
+            self._lst_files,
+            activated=self._on_remove_selected,
+        )
         lay.addWidget(self._lst_files, 1)
 
-        self._btn_process = PrimaryPushButton(FluentIcon.PLAY, t("kms-import-pdf-process", count=0))
+        self._btn_process = PrimaryPushButton(
+            FluentIcon.PLAY, t("kms-import-pdf-process", count=0)
+        )
         self._btn_process.clicked.connect(self._on_process_pdfs)
         self._btn_process.setEnabled(False)
         lay.addWidget(self._btn_process)
@@ -139,11 +176,16 @@ class ImportPage(QWidget):
         return w
 
     def _on_pick_pdfs(self) -> None:
-        paths, _ = QFileDialog.getOpenFileNames(self, t("kms-import-pdf-pick"), "", "PDF (*.pdf)")
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, t("kms-import-pdf-pick"), "", "PDF (*.pdf)"
+        )
         if not paths:
             return
-        existing = {self._lst_files.item(i).text()
-                    for i in range(self._lst_files.count())}
+
+        existing = {
+            self._lst_files.item(i).text() for i in range(self._lst_files.count())
+        }
+
         for p in paths:
             if p not in existing:
                 self._lst_files.addItem(p)
@@ -169,8 +211,13 @@ class ImportPage(QWidget):
         paths = [self._lst_files.item(i).text() for i in range(self._lst_files.count())]
         if not paths or self._worker:
             return
+
         self._success = 0
         self._failed = 0
+        self._duplicates = 0
+        self._errors: list[str] = []
+        self._duplicate_messages: list[str] = []
+
         self._progress.setVisible(True)
         self._progress.setRange(0, len(paths))
         self._progress.setValue(0)
@@ -188,8 +235,29 @@ class ImportPage(QWidget):
         self._lbl_pdf_status.setText(f"[{cur}/{total}] {filename}")
 
     def _on_pdf_one(self, res: dict) -> None:
-        if "error" in res:
+        if res.get("_is_dup"):
+            self._duplicates += 1
+            fn = res.get("filename", "")
+            dup_title = res.get("_dup_title", "")
+            dup_reason = res.get("_dup_reason", "")
+            if dup_reason == "md5":
+                msg = f"Duplicate file: {fn}" if fn else "Duplicate file"
+            elif dup_reason == "doi":
+                dup_info = dup_title[:60] if dup_title else ""
+                msg = f"Duplicate DOI in: {dup_info}" if dup_info else "Duplicate DOI"
+            else:
+                dup_info = dup_title[:60] if dup_title else ""
+                msg = dup_info if dup_info else "Duplicate by similar title"
+            self._duplicate_messages.append(msg)
+        elif "error" in res:
             self._failed += 1
+            fn = res.get("filename", "")
+            err = res["error"]
+            if fn:
+                msg = f"{fn}: {err}"
+            else:
+                msg = err
+            self._errors.append(msg)
         else:
             self._success += 1
 
@@ -197,10 +265,41 @@ class ImportPage(QWidget):
         self._worker = None
         self._progress.setVisible(False)
         self._sync_file_buttons()
-        InfoBar.success(
-            title=t("kms-import-pdf-success", count=self._success),
-            content=t("kms-import-pdf-failed", count=self._failed) if self._failed else "",
-            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000,
+
+        first_error = self._errors[0] if self._errors else ""
+        content_lines: list[str] = []
+        title_parts: list[str] = []
+
+        if self._duplicates:
+            title_parts.append(t("kms-import-pdf-duplicate", count=self._duplicates))
+        if self._failed:
+            title_parts.append(t("kms-import-pdf-failed", count=self._failed))
+
+        if self._duplicates:
+            content_lines.append(t("kms-import-pdf-duplicate", count=self._duplicates))
+
+        if self._failed:
+            content_lines.append(t("kms-import-pdf-failed", count=self._failed))
+            if first_error:
+                content_lines.append(first_error[:150])
+
+        title = t("kms-import-pdf-success", count=self._success)
+        if title_parts:
+            title = f"{title} · {' / '.join(title_parts)}"
+
+        content = "\n".join(content_lines)
+
+        ib = (
+            InfoBar.success
+            if not self._failed and not self._duplicates
+            else InfoBar.warning
+        )
+        ib(
+            title=title,
+            content=content,
+            parent=self,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=5000 if self._failed or self._duplicates else 3000,
         )
 
     # ----- DOI tab -----------------------------------------------------
@@ -210,7 +309,9 @@ class ImportPage(QWidget):
         lay.setSpacing(10)
         lay.addWidget(BodyLabel(t("kms-import-doi-prompt")))
         self._txt_dois = PlainTextEdit(w)
-        self._txt_dois.setPlaceholderText("10.1056/NEJMoa2034577\n10.1016/j.lancet.2020.11.001")
+        self._txt_dois.setPlaceholderText(
+            "10.1056/NEJMoa2034577\n10.1016/j.lancet.2020.11.001"
+        )
         lay.addWidget(self._txt_dois, 1)
         self._chk_oa = CheckBox(t("kms-import-doi-download-pdf"))
         lay.addWidget(self._chk_oa)
@@ -236,7 +337,9 @@ class ImportPage(QWidget):
         (InfoBar.success if ok and not fail else InfoBar.warning)(
             title=t("kms-import-pdf-success", count=ok),
             content=t("kms-import-pdf-failed", count=fail) if fail else "",
-            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000,
+            parent=self,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=3000,
         )
 
     # ----- PubMed tab -------------------------------------------------
@@ -260,20 +363,40 @@ class ImportPage(QWidget):
             return
         meta = fetch_pubmed(q)
         if not meta or not meta.get("title"):
-            InfoBar.error(title=t("error-pubmed-not-found"), content="",
-                          parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000)
+            InfoBar.error(
+                title=t("error-pubmed-not-found"),
+                content="",
+                parent=self,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+            )
             return
         if meta.get("doi"):
             res = import_by_doi(meta["doi"])
             if "error" in res:
-                InfoBar.error(title=res["error"], content="",
-                              parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000)
+                InfoBar.error(
+                    title=res["error"],
+                    content="",
+                    parent=self,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=3000,
+                )
             else:
-                InfoBar.success(title=t("kms-import-pdf-success", count=1), content="",
-                                parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000)
+                InfoBar.success(
+                    title=t("kms-import-pdf-success", count=1),
+                    content="",
+                    parent=self,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=3000,
+                )
         else:
-            InfoBar.info(title=meta.get("title", "")[:120], content="",
-                         parent=self, position=InfoBarPosition.TOP_RIGHT, duration=3000)
+            InfoBar.info(
+                title=meta.get("title", "")[:120],
+                content="",
+                parent=self,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+            )
 
     # ----- Manual tab -------------------------------------------------
     def _build_manual_tab(self) -> QWidget:
@@ -302,8 +425,13 @@ class ImportPage(QWidget):
     def _on_manual_save(self) -> None:
         title = self._ed_title.text().strip()
         if not title:
-            InfoBar.warning(title=t("kms-import-manual-title"), content="",
-                            parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2000)
+            InfoBar.warning(
+                title=t("kms-import-manual-title"),
+                content="",
+                parent=self,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=2000,
+            )
             return
         abstract = self._txt_abstract.toPlainText().strip()
         combined = f"{title} {abstract}"
@@ -311,18 +439,36 @@ class ImportPage(QWidget):
         pico = parse_pico_from_abstract(abstract)
         tags = auto_tag(abstract, "", abstract)
         import hashlib
+
         md5 = hashlib.md5(f"{title}{self._ed_doi.text()}".encode()).hexdigest()
         paper = {
-            "md5": md5, "original_filename": "(manual)", "title": title,
-            "authors": self._ed_authors.text().strip(), "year": self._sp_year.value(),
-            "journal": self._ed_journal.text().strip(), "doi": self._ed_doi.text().strip(),
-            "abstract": abstract, "keywords": "", "full_text": abstract,
-            "tags": json.dumps(tags), "status": "unread", "starred": 0, "pages": 0,
-            "added_at": datetime.now().strftime("%Y-%m-%d"), "file_path": "",
-            "notes": "", "highlights": "[]", "project": "", "reading_position": 0,
-            "evidence_level": ev, "study_design": sd, "clinical_specialty": sp,
-            "pico_json": json.dumps(pico), "risk_of_bias_json": "{}",
-            "impact_factor": 0.0, "citation_count": 0,
+            "md5": md5,
+            "original_filename": "(manual)",
+            "title": title,
+            "authors": self._ed_authors.text().strip(),
+            "year": self._sp_year.value(),
+            "journal": self._ed_journal.text().strip(),
+            "doi": self._ed_doi.text().strip(),
+            "abstract": abstract,
+            "keywords": "",
+            "full_text": abstract,
+            "tags": json.dumps(tags),
+            "status": "unread",
+            "starred": 0,
+            "pages": 0,
+            "added_at": datetime.now().strftime("%Y-%m-%d"),
+            "file_path": "",
+            "notes": "",
+            "highlights": "[]",
+            "project": "",
+            "reading_position": 0,
+            "evidence_level": ev,
+            "study_design": sd,
+            "clinical_specialty": sp,
+            "pico_json": json.dumps(pico),
+            "risk_of_bias_json": "{}",
+            "impact_factor": 0.0,
+            "citation_count": 0,
         }
         paper["renamed_filename"] = build_renamed_filename(paper)
         with db_conn() as conn:
@@ -335,11 +481,21 @@ class ImportPage(QWidget):
                     paper,
                 )
             except Exception as e:
-                InfoBar.error(title=t("common-error"), content=str(e),
-                              parent=self, position=InfoBarPosition.TOP_RIGHT, duration=4000)
+                InfoBar.error(
+                    title=t("common-error"),
+                    content=str(e),
+                    parent=self,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=4000,
+                )
                 return
-        InfoBar.success(title=t("common-success"), content=title[:80],
-                        parent=self, position=InfoBarPosition.TOP_RIGHT, duration=2500)
+        InfoBar.success(
+            title=t("common-success"),
+            content=title[:80],
+            parent=self,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=2500,
+        )
         self._ed_title.clear()
         self._ed_authors.clear()
         self._ed_journal.clear()
