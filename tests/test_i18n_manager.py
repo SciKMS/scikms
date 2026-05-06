@@ -1,3 +1,5 @@
+import pytest
+
 from scikms.i18n import _MANAGER
 from scikms.i18n.manager import i18nManager
 
@@ -61,3 +63,6 @@ def test_missing_key_return_key(monkeypatch):
     result = manager.translate("missing_key", locale="vi-VN")
 
     assert result == "missing_key"
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

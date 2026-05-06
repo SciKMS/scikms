@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from scikms.kms.db import db_conn
+from scikms.kms.db.connection import db_conn
 
 
 def get_library_stats() -> dict[str, Any]:
