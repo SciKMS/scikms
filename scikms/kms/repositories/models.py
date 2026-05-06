@@ -4,7 +4,9 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-
+"""
+Represents the real record in DB
+"""
 @dataclass(slots=True)
 class Paper:
     id: int
@@ -20,6 +22,7 @@ class Paper:
     keywords: str = ""
     full_text: str = ""
     tags: str = ""
+    # This notes can accept several notes from different places from the file
     notes: str = ""
     highlights: list[str] = field(default_factory=list)
     status: str = "unread"
@@ -167,3 +170,29 @@ class PaperDuplicateRef:
             doi = row.get("doi") or "",
         
         )
+
+
+"""
+Returns the search result in the services/ section
+"""
+@dataclass(slots = True)
+class PaperSearchResult:
+    paper: Paper 
+    match_scope: str
+    
+    def add_scope(self, scope: str) -> None:
+        """
+        Adding the match_scope when searching (matched from content and notes)
+        """
+        if self.match_scope == scope:
+            return 
+        if self.match_scope == "default":
+            self.match_scope = scope 
+            return 
+
+        # Get all the set of scope
+        current_scope = set(self.match_scope.split('+'))
+        current_scope.add(scope)
+        # Since set is unordered, we need to reorder again
+        self.match_scope = "+".join(sorted(current_scope))
+

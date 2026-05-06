@@ -18,7 +18,6 @@ from scikms.kms.repositories.papers import (
     update_paper,
 )
 from scikms.kms.services.papers import check_duplicate, delete_paper
-from scikms.kms.services.search import search_papers
 from scikms.kms.services.stats import get_db_stats
 from scikms.kms.services.tags import get_tag_dict, save_tag_dict
 
@@ -35,6 +34,5 @@ __all__ = [
     "init_db",
     "insert_paper",
     "save_tag_dict",
-    "search_papers",
     "update_paper",
 ]

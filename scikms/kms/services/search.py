@@ -2,53 +2,56 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
+from scikms.kms.repositories.models import Paper, PaperSearchResult
 from scikms.kms.repositories.papers import get_all_papers
-from scikms.kms.repositories.search import (
-    search_basic_like,
-    search_content_fts,
-    search_notes_fts,
-    search_notes_like,
-)
+from scikms.kms.repositories.search import (search_basic_like,
+                                            search_content_fts,
+                                            search_notes_fts,
+                                            search_notes_like)
+
+SearchScope = Literal["all", "title_abstract", "notes", "fulltext"]
 
 
-def search_papers(query: str, scope: str = "all") -> list[dict]:
+def _merge_results(
+    results: dict[int, PaperSearchResult],
+    rows: list[Paper],
+    match_scope: str,
+) -> None:
+    for paper in rows:
+        if paper.id not in results:
+            results[paper.id] = PaperSearchResult(paper=paper, match_scope=match_scope)
+        else:
+            results[paper.id].add_scope(match_scope)
+
+
+def search_papers(query: str, scope: SearchScope = "all") -> list[PaperSearchResult]:
     """Multi-scope FTS5 search.
 
     scope: "all" | "title_abstract" | "notes" | "fulltext".
-    Each returned dict has ``_match_scope`` in {"content","notes","content+notes"}.
+    Each returned result has ``match_scope`` in
+    {"default", "content", "notes", "content+notes"}.
     """
     if not query.strip():
-        return get_all_papers()
+        all_papers = get_all_papers()
+        return [PaperSearchResult(paper=paper, match_scope="default") for paper in all_papers]
 
     q = query.strip()
     like = f"%{q}%"
     fts_q = " OR ".join(f'"{t}"' if " " in t else f"{t}*" for t in q.split()[:8])
 
-    results: dict[int, dict] = {}
+    results: dict[int, PaperSearchResult] = {}
 
     if scope in ("all", "title_abstract", "fulltext"):
-        for row in search_content_fts(fts_q):
-            row.setdefault("_match_scope", "content")
-            results[row["id"]] = row
+        _merge_results(results, search_content_fts(fts_q), "content")
 
     if scope in ("all", "notes"):
-        for row in search_notes_fts(fts_q):
-            pid = row["id"]
-            if pid not in results:
-                row["_match_scope"] = "notes"
-                results[pid] = row
-            else:
-                results[pid]["_match_scope"] = "content+notes"
+        _merge_results(results, search_notes_fts(fts_q), "notes")
+        _merge_results(results, search_notes_like(like), "notes")
 
-    if scope in ("all", "notes"):
-        for row in search_notes_like(like):
-            if row["id"] not in results:
-                row["_match_scope"] = "notes"
-                results[row["id"]] = row
-
-    if not results:
-        for row in search_basic_like(like):
-            row.setdefault("_match_scope", "content")
-            results[row["id"]] = row
+    # Fallback — only for broad "all" scope when FTS returned nothing
+    if not results and scope == "all":
+        _merge_results(results, search_basic_like(like), "content")
 
     return list(results.values())
