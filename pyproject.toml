@@ -46,6 +46,7 @@ dev = [
     "mypy",
     "yapf",
     "pyinstaller>=6.19.0",
+    "pyqt6-stubs>=20250824",
 ]
 
 [project.scripts]

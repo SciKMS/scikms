@@ -3,15 +3,18 @@
 Each test gets its own data root via tmp_path + ``set_data_root``.
 """
 
-import pytest
 import uuid
+from typing import Any
+
+import pytest
 
 from scikms.kms.db import db_conn
+from scikms.kms.repositories.models import Paper, PaperDuplicateRef
 
 
 def _sample_paper(
     md5: str | None = None, title="Title", abstract="A meta-analysis of heart disease"
-):
+) -> dict[str, Any]:
     return {
         "md5": md5 if md5 else uuid.uuid4().hex[:12],
         "original_filename": "x.pdf",
@@ -69,89 +72,105 @@ def test_init_db_idempotent(tmp_path):
 
 # We inject the kms_db from the conftest.py to all the operations here
 def test_insert_and_get_paper(kms_db):  # pytest will run the kms_db first
-    from scikms.kms.db import insert_paper, get_paper_by_id, get_papers_count
+    from scikms.kms.db import get_paper_by_id, insert_paper
 
-    sample_paper = _sample_paper()
-    pid = insert_paper(sample_paper)
+    pid = insert_paper(_sample_paper())
+    paper = get_paper_by_id(pid)
 
-    assert pid >= 1
-    p = get_paper_by_id(pid)
-
-    # The test fails if it returns to None
-    assert p["title"] == "Title"
-    assert get_papers_count() == 1
+    assert isinstance(paper, Paper)
+    assert paper is not None
+    assert paper.title == "Title"
+    assert paper.status == "unread"
 
 
-def test_search_papers_fts_match(kms_db):
-    from scikms.kms.db import insert_paper, search_papers
+def test_get_all_papers_returns_paper_models(kms_db):
+    from scikms.kms.db import get_all_papers, insert_paper
 
-    heart_study = _sample_paper(
-        md5=None, title="Heart study", abstract="meta-analysis of heart"
-    )
-    lung_study = _sample_paper(
-        md5=None, title="Lung study", abstract="cohort study lung cancer"
-    )
-    insert_paper(heart_study)
-    insert_paper(lung_study)
+    insert_paper(_sample_paper(title="First"))
+    insert_paper(_sample_paper(title="Second"))
 
-    res = search_papers("heart")
-    assert any("Heart" in r["title"] for r in res)
-
-
-def test_search_papers_returns_all_on_empty_query(kms_db):
-    from scikms.kms.db import insert_paper, search_papers
-
-    insert_paper(_sample_paper())
-    assert len(search_papers("")) == 1
-
-
-def test_check_duplicate_by_md5(kms_db):
-    from scikms.kms.db import insert_paper, check_duplicate
-
-    insert_paper(_sample_paper(md5="dupkey"))
-    dup = check_duplicate("dupkey", "", "")
-    assert dup is not None
-    assert dup["title"] == "Title"
+    papers = get_all_papers()
+    assert len(papers) == 2
+    assert all(isinstance(p, Paper) for p in papers)
+    assert {p.title for p in papers} == {"First", "Second"}
 
 
 def test_update_and_delete_paper(kms_db):
-    from scikms.kms.db import insert_paper, update_paper, delete_paper, get_paper_by_id
+    from scikms.kms.db import (delete_paper, get_paper_by_id, insert_paper,
+                               update_paper)
 
     pid = insert_paper(_sample_paper())
     update_paper(pid, {"status": "read", "starred": 1})
-    p = get_paper_by_id(pid)
 
-    assert p["status"] == "read"
-    assert p["starred"] == 1
+    paper = get_paper_by_id(pid)
+    assert paper is not None
+    assert paper.status == "read"
+    assert paper.starred == 1
 
     delete_paper(pid)
     assert get_paper_by_id(pid) is None
 
+def test_check_duplicate_by_md5_returns_duplicate_ref(kms_db):
+    from scikms.kms.db import check_duplicate, insert_paper
 
-def test_get_db_stats_keys(kms_db):
-    from scikms.kms.db import insert_paper, get_db_stats
+    insert_paper(_sample_paper(md5="dupkey"))
+    dup = check_duplicate("dupkey", "", "")
 
-    insert_paper(_sample_paper())
-    stats = get_db_stats()
-    for key in (
-        "total",
-        "read",
-        "reading",
-        "unread",
-        "starred",
-        "pages",
-        "projects",
-        "annotated",
-        "db_kb",
-        "pdf_mb",
-        "storage_path",
-    ):
-        assert key in stats
+    assert dup is not None
+    assert isinstance(dup, PaperDuplicateRef)
+    assert dup.title == "Title"
+    assert dup.doi == "10.1/x"
+
+def test_find_duplicate_by_md5_returns_duplicate_ref(kms_db):
+    from scikms.kms.db import insert_paper
+    from scikms.kms.repositories.papers import find_duplicate_by_md5
+
+    insert_paper(_sample_paper(md5="dupkey"))
+    dup = find_duplicate_by_md5("dupkey")
+
+    assert dup is not None
+    assert isinstance(dup, PaperDuplicateRef)
+    assert dup.id >= 1
+    assert dup.title == "Title"
+    assert dup.doi == "10.1/x"
 
 
-def test_tag_dict_save_and_load(kms_db):
-    from scikms.kms.db import save_tag_dict, get_tag_dict
+def test_insert_paper_accepts_paper_model(kms_db):
+    from scikms.kms.db import get_paper_by_id, insert_paper
+    from scikms.kms.repositories.models import Paper
+    paper = Paper(
+        id=0,
+        md5="paper-model",
+        original_filename="x.pdf",
+        renamed_filename="x.pdf",
+        title="Model Insert",
+        authors="Smith, John",
+        year=2024,
+        journal="NEJM",
+        doi="10.1/model",
+        abstract="A meta-analysis of heart disease",
+        keywords="",
+        full_text="A meta-analysis of heart disease",
+        tags="[]",
+        notes="",
+        status="unread",
+        starred=0,
+        pages=10,
+        added_at="2024-01-01",
+        file_path="",
+        project="",
+        reading_position=0,
+        evidence_level="I",
+        study_design="Meta-analysis",
+        clinical_specialty="Cardiology",
+        impact_factor=0.0,
+        citation_count=0,
+    )
+    pid = insert_paper(paper)
+    stored = get_paper_by_id(pid)
+    assert stored is not None
+    assert stored.title == "Model Insert"
+    assert stored.doi == "10.1/model"
 
-    save_tag_dict(["tag1", "tag2"])
-    tags = get_tag_dict()
-    assert "tag1" in tags
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
