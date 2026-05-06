@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from scikms.kms.db.connection import db_conn
 
 
-def get_library_stats() -> dict:
+def get_library_stats() -> dict[str, Any]:
     with db_conn() as conn:
         total = conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0]
         read_cnt = conn.execute(

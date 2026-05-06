@@ -1,4 +1,5 @@
 import pytest
+
 from scikms import i18n
 
 
@@ -34,3 +35,6 @@ def test_register_plugin_i18n_raises_not_implemented():
 def test_human_readable_number_formats_values():
     assert i18n.human_readable_number(1500, locale="en-US") == "1.5K"
     assert i18n.human_readable_number(12000, locale="zh-CN") == "1.2万"
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

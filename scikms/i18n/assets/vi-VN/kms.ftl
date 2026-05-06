@@ -96,6 +96,7 @@ kms-import-pdf-process = Xử lý { $count } file
 kms-import-pdf-extract-images = Tự động trích xuất hình ảnh
 kms-import-pdf-success = Đã thêm { $count } bài.
 kms-import-pdf-failed = Thất bại { $count } bài.
+kms-import-pdf-duplicate = Bỏ qua { $count } trùng lặp
 kms-import-doi-prompt = Danh sách DOI (mỗi dòng một DOI)
 kms-import-doi-fetch = Tra cứu CrossRef
 kms-import-doi-download-pdf = Tải PDF mở (Unpaywall) nếu có
