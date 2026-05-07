@@ -1,11 +1,29 @@
-.PHONY: all pytest lint flake8 pylint mypy yapf clean clean_py clean_emacs \
+SHELL := /bin/bash
+
+.PHONY: all pytest pytest-report test report-clean lint flake8 pylint mypy yapf clean clean_py clean_emacs \
         bundle bundle-mac bundle-win bundle-clean dmg sign-mac
+
 
 all: pytest
 
 # -- test --
 pytest:
 	QT_QPA_PLATFORM=offscreen uv run pytest -p no:faulthandler
+
+# -- test and export logs -- 
+REPORT_DIR=reports
+
+pytest-report:
+	mkdir -p ${REPORT_DIR}
+	set -o pipefail; QT_QPA_PLATFORM=offscreen uv run pytest -p no:faulthandler \
+		--junitxml=${REPORT_DIR}/pytest-junit.xml \
+		--cov-report=term-missing \
+		--cov-report=xml:${REPORT_DIR}/coverage.xml \
+		--cov-report=html:${REPORT_DIR}/htmlcov \
+		2>&1 | tee ${REPORT_DIR}/pytest.log
+
+report-clean:
+	rm -rf ${REPORT_DIR}
 
 # -- lint --
 flake8:
